@@ -4,6 +4,8 @@ import { StudyModeCard } from '@/components/study/StudyModeCard';
 import { FlashCard } from '@/components/study/FlashCard';
 import { QuizCard } from '@/components/study/QuizCard';
 import { SpellingCard } from '@/components/study/SpellingCard';
+import { ListeningCard } from '@/components/study/ListeningCard';
+import { SentenceCard } from '@/components/study/SentenceCard';
 import { StudyProgress } from '@/components/study/StudyProgress';
 import { studyModes, mockWords } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
@@ -136,14 +138,21 @@ const Study = () => {
             />
           )}
 
-          {(selectedMode === 'listening' || selectedMode === 'sentence') && (
-            <div className="text-center py-16">
-              <p className="text-2xl mb-4">🚧</p>
-              <p className="text-muted-foreground">该模式正在开发中...</p>
-              <Button onClick={handleExit} className="mt-4">
-                返回选择其他模式
-              </Button>
-            </div>
+          {selectedMode === 'listening' && (
+            <ListeningCard
+              key={currentWord.id}
+              word={currentWord}
+              options={generateOptions(currentWord.word, true)}
+              onAnswer={handleAnswer}
+            />
+          )}
+
+          {selectedMode === 'sentence' && (
+            <SentenceCard
+              key={currentWord.id}
+              word={currentWord}
+              onAnswer={handleAnswer}
+            />
           )}
         </div>
 

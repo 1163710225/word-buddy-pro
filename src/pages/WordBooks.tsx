@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { WordBookCard } from '@/components/wordbook/WordBookCard';
 import { mockWordBooks } from '@/data/mockData';
@@ -7,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Search, Plus, Filter } from 'lucide-react';
 
 const WordBooks = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -23,6 +25,10 @@ const WordBooks = () => {
     const matchesCategory = !activeCategory || book.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const handleBookClick = (bookId: string) => {
+    navigate(`/wordbooks/${bookId}`);
+  };
 
   return (
     <AppLayout>
@@ -73,7 +79,7 @@ const WordBooks = () => {
               className="animate-fade-in"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <WordBookCard book={book} />
+              <WordBookCard book={book} onClick={() => handleBookClick(book.id)} />
             </div>
           ))}
         </div>
