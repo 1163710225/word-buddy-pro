@@ -12,6 +12,7 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  Gamepad2,
 } from 'lucide-react';
 
 const navItems = [
@@ -19,6 +20,7 @@ const navItems = [
   { path: '/wordbooks', icon: BookOpen, label: '词库', description: '单词本管理' },
   { path: '/study', icon: GraduationCap, label: '学习', description: '开始背单词' },
   { path: '/review', icon: Brain, label: '复习', description: '巩固记忆' },
+  { path: '/games', icon: Gamepad2, label: '小游戏', description: '趣味记忆' },
   { path: '/plan', icon: Calendar, label: '计划', description: '学习规划' },
   { path: '/stats', icon: BarChart3, label: '统计', description: '数据分析' },
   { path: '/ai', icon: Sparkles, label: 'AI助手', description: '智能辅导' },

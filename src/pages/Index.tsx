@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { TodayTask } from '@/components/dashboard/TodayTask';
@@ -8,7 +9,12 @@ import { BookOpen, Brain, Flame, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Index = () => {
+  const navigate = useNavigate();
   const stats = mockUserStats;
+
+  const handleBookClick = (bookId: string) => {
+    navigate(`/wordbooks/${bookId}`);
+  };
 
   return (
     <AppLayout>
@@ -73,7 +79,11 @@ const Index = () => {
             </div>
             <div className="space-y-4">
               {mockWordBooks.slice(0, 3).map((book) => (
-                <WordBookCard key={book.id} book={book} />
+                <WordBookCard 
+                  key={book.id} 
+                  book={book} 
+                  onClick={() => handleBookClick(book.id)}
+                />
               ))}
             </div>
           </div>
