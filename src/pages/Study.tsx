@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { StudyModeCard } from '@/components/study/StudyModeCard';
 import { FlashCard } from '@/components/study/FlashCard';
@@ -7,24 +8,54 @@ import { SpellingCard } from '@/components/study/SpellingCard';
 import { ListeningCard } from '@/components/study/ListeningCard';
 import { SentenceCard } from '@/components/study/SentenceCard';
 import { StudyProgress } from '@/components/study/StudyProgress';
-import { studyModes, mockWords } from '@/data/mockData';
+import { studyModes } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, X } from 'lucide-react';
-import { StudyMode } from '@/types/vocabulary';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, X, Loader2 } from 'lucide-react';
+import { StudyMode, Word } from '@/types/vocabulary';
+import { useWordbooks, useWords } from '@/hooks/useWordbooks';
+import { useUpdateWordProgress, useUpdateDailyStats } from '@/hooks/useUserStats';
 
 const Study = () => {
+  const location = useLocation();
+  const initialWordbookId = location.state?.wordbookId || '';
+  
   const [selectedMode, setSelectedMode] = useState<StudyMode | null>(null);
+  const [selectedWordbookId, setSelectedWordbookId] = useState(initialWordbookId);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+  const [startTime, setStartTime] = useState<Date | null>(null);
 
-  const words = mockWords;
-  const currentWord = words[currentIndex];
+  const { data: wordbooks, isLoading: wordbooksLoading } = useWordbooks();
+  const { data: words, isLoading: wordsLoading } = useWords(selectedWordbookId);
+  const updateProgress = useUpdateWordProgress();
+  const updateDailyStats = useUpdateDailyStats();
+
+  const currentWord = words?.[currentIndex];
+
+  useEffect(() => {
+    if (selectedMode && !startTime) {
+      setStartTime(new Date());
+    }
+  }, [selectedMode, startTime]);
 
   const handleAnswer = (isCorrect: boolean) => {
     if (isCorrect) setCorrectCount((c) => c + 1);
     
-    if (currentIndex < words.length - 1) {
+    // Update word progress
+    if (currentWord) {
+      updateProgress.mutate({ wordId: currentWord.id, correct: isCorrect });
+    }
+    
+    if (words && currentIndex < words.length - 1) {
       setTimeout(() => setCurrentIndex((i) => i + 1), 300);
+    } else {
+      // Session complete - update daily stats
+      const duration = startTime ? Math.round((new Date().getTime() - startTime.getTime()) / 60000) : 1;
+      updateDailyStats.mutate({
+        newWords: words?.length || 0,
+        studyMinutes: Math.max(1, duration),
+      });
     }
   };
 
@@ -32,9 +63,12 @@ const Study = () => {
     setSelectedMode(null);
     setCurrentIndex(0);
     setCorrectCount(0);
+    setStartTime(null);
   };
 
   const generateOptions = (correctAnswer: string, isWord: boolean) => {
+    if (!words) return [correctAnswer];
+    
     const allOptions = isWord
       ? words.map((w) => w.word)
       : words.map((w) => w.meaning);
@@ -47,6 +81,21 @@ const Study = () => {
     return [...otherOptions, correctAnswer].sort(() => Math.random() - 0.5);
   };
 
+  const convertToLegacyWord = (word: typeof words extends (infer T)[] ? T : never): Word => ({
+    id: word.id,
+    word: word.word,
+    phonetic: word.phonetic || '',
+    meaning: word.meaning,
+    example: word.example || '',
+    exampleTranslation: word.example_translation || '',
+    audioUrl: word.audio_url || undefined,
+    category: '',
+    difficulty: (word.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
+    mastery: 0,
+    reviewCount: 0,
+    correctCount: 0,
+  });
+
   if (!selectedMode) {
     return (
       <AppLayout>
@@ -54,6 +103,30 @@ const Study = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground">选择学习模式</h1>
             <p className="text-muted-foreground mt-1">根据你的需求选择合适的学习方式</p>
+          </div>
+
+          {/* Wordbook Selection */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium mb-2">选择词库</label>
+            {wordbooksLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                加载中...
+              </div>
+            ) : (
+              <Select value={selectedWordbookId} onValueChange={setSelectedWordbookId}>
+                <SelectTrigger className="w-full max-w-md">
+                  <SelectValue placeholder="请选择要学习的词库" />
+                </SelectTrigger>
+                <SelectContent>
+                  {wordbooks?.map((wb) => (
+                    <SelectItem key={wb.id} value={wb.id}>
+                      {wb.icon} {wb.name} ({wb.word_count}词)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-6">
@@ -65,15 +138,36 @@ const Study = () => {
                 <StudyModeCard
                   {...mode}
                   color={mode.color as 'primary' | 'accent' | 'success' | 'warning'}
-                  onClick={() => setSelectedMode(mode.id as StudyMode)}
+                  onClick={() => {
+                    if (!selectedWordbookId) {
+                      return;
+                    }
+                    setSelectedMode(mode.id as StudyMode);
+                  }}
                 />
               </div>
             ))}
           </div>
+
+          {!selectedWordbookId && (
+            <p className="text-center text-amber-500 mt-4">请先选择词库</p>
+          )}
         </div>
       </AppLayout>
     );
   }
+
+  if (wordsLoading || !words || !currentWord) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const legacyWord = convertToLegacyWord(currentWord);
 
   return (
     <AppLayout>
@@ -104,7 +198,7 @@ const Study = () => {
           {selectedMode === 'flashcard' && (
             <FlashCard
               key={currentWord.id}
-              word={currentWord}
+              word={legacyWord}
               onKnow={() => handleAnswer(true)}
               onDontKnow={() => handleAnswer(false)}
             />
@@ -113,7 +207,7 @@ const Study = () => {
           {selectedMode === 'word-meaning' && (
             <QuizCard
               key={currentWord.id}
-              word={currentWord}
+              word={legacyWord}
               mode="word-meaning"
               options={generateOptions(currentWord.meaning, false)}
               onAnswer={handleAnswer}
@@ -123,7 +217,7 @@ const Study = () => {
           {selectedMode === 'meaning-word' && (
             <QuizCard
               key={currentWord.id}
-              word={currentWord}
+              word={legacyWord}
               mode="meaning-word"
               options={generateOptions(currentWord.word, true)}
               onAnswer={handleAnswer}
@@ -133,7 +227,7 @@ const Study = () => {
           {selectedMode === 'spelling' && (
             <SpellingCard
               key={currentWord.id}
-              word={currentWord}
+              word={legacyWord}
               onAnswer={handleAnswer}
             />
           )}
@@ -141,7 +235,7 @@ const Study = () => {
           {selectedMode === 'listening' && (
             <ListeningCard
               key={currentWord.id}
-              word={currentWord}
+              word={legacyWord}
               options={generateOptions(currentWord.word, true)}
               onAnswer={handleAnswer}
             />
@@ -150,7 +244,7 @@ const Study = () => {
           {selectedMode === 'sentence' && (
             <SentenceCard
               key={currentWord.id}
-              word={currentWord}
+              word={legacyWord}
               onAnswer={handleAnswer}
             />
           )}

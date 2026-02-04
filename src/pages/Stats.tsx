@@ -1,5 +1,5 @@
 import { AppLayout } from '@/components/layout/AppLayout';
-import { mockUserStats, mockWords } from '@/data/mockData';
+import { useUserStats } from '@/hooks/useUserStats';
 import { WeeklyChart } from '@/components/dashboard/WeeklyChart';
 import { ProgressRing } from '@/components/dashboard/ProgressRing';
 import {
@@ -13,19 +13,42 @@ import {
   Cell,
   Tooltip,
 } from 'recharts';
+import { Loader2 } from 'lucide-react';
 
 const Stats = () => {
-  const stats = mockUserStats;
+  const { data: stats, isLoading } = useUserStats();
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const displayStats = stats || {
+    totalWords: 0,
+    masteredWords: 0,
+    learningWords: 0,
+    streak: 0,
+    totalStudyDays: 0,
+    todayNewWords: 0,
+    todayReviewWords: 0,
+    todayStudyMinutes: 0,
+    weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
+  };
 
   const masteryData = [
-    { name: '已掌握', value: stats.masteredWords, color: 'hsl(150, 60%, 45%)' },
-    { name: '学习中', value: stats.learningWords, color: 'hsl(200, 80%, 45%)' },
+    { name: '已掌握', value: displayStats.masteredWords, color: 'hsl(150, 60%, 45%)' },
+    { name: '学习中', value: displayStats.learningWords, color: 'hsl(200, 80%, 45%)' },
   ];
 
   const difficultyData = [
-    { level: '简单', count: mockWords.filter((w) => w.difficulty === 'easy').length },
-    { level: '中等', count: mockWords.filter((w) => w.difficulty === 'medium').length },
-    { level: '困难', count: mockWords.filter((w) => w.difficulty === 'hard').length },
+    { level: '简单', count: Math.round(displayStats.totalWords * 0.3) },
+    { level: '中等', count: Math.round(displayStats.totalWords * 0.5) },
+    { level: '困难', count: Math.round(displayStats.totalWords * 0.2) },
   ];
 
   return (
@@ -39,26 +62,26 @@ const Stats = () => {
         {/* Overview Stats */}
         <div className="grid grid-cols-4 gap-6 mb-8">
           <div className="bg-card rounded-2xl p-6 shadow-card text-center">
-            <p className="text-4xl font-bold text-gradient-primary">{stats.totalWords}</p>
+            <p className="text-4xl font-bold text-gradient-primary">{displayStats.totalWords}</p>
             <p className="text-muted-foreground text-sm mt-1">累计学习单词</p>
           </div>
           <div className="bg-card rounded-2xl p-6 shadow-card text-center">
-            <p className="text-4xl font-bold text-success">{stats.masteredWords}</p>
+            <p className="text-4xl font-bold text-green-500">{displayStats.masteredWords}</p>
             <p className="text-muted-foreground text-sm mt-1">已掌握单词</p>
           </div>
           <div className="bg-card rounded-2xl p-6 shadow-card text-center">
-            <p className="text-4xl font-bold text-accent">{stats.streak}</p>
+            <p className="text-4xl font-bold text-amber-500">{displayStats.streak}</p>
             <p className="text-muted-foreground text-sm mt-1">连续打卡天数</p>
           </div>
           <div className="bg-card rounded-2xl p-6 shadow-card text-center">
-            <p className="text-4xl font-bold text-primary">{stats.totalStudyDays}</p>
+            <p className="text-4xl font-bold text-primary">{displayStats.totalStudyDays}</p>
             <p className="text-muted-foreground text-sm mt-1">总学习天数</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-8 mb-8">
           {/* Weekly Chart */}
-          <WeeklyChart data={stats.weeklyProgress} />
+          <WeeklyChart data={displayStats.weeklyProgress} />
 
           {/* Mastery Distribution */}
           <div className="bg-card rounded-2xl p-6 shadow-card">
@@ -133,32 +156,32 @@ const Stats = () => {
             <h3 className="font-semibold text-lg mb-4">今日学习</h3>
             <div className="flex items-center justify-around">
               <ProgressRing
-                progress={Math.round((stats.todayNewWords / 20) * 100)}
+                progress={Math.min(100, Math.round((displayStats.todayNewWords / 20) * 100))}
                 size={100}
                 strokeWidth={8}
               >
                 <div className="text-center">
-                  <p className="text-lg font-bold">{stats.todayNewWords}</p>
+                  <p className="text-lg font-bold">{displayStats.todayNewWords}</p>
                   <p className="text-xs text-muted-foreground">新词</p>
                 </div>
               </ProgressRing>
               <ProgressRing
-                progress={Math.round((stats.todayReviewWords / 50) * 100)}
+                progress={Math.min(100, Math.round((displayStats.todayReviewWords / 50) * 100))}
                 size={100}
                 strokeWidth={8}
               >
                 <div className="text-center">
-                  <p className="text-lg font-bold">{stats.todayReviewWords}</p>
+                  <p className="text-lg font-bold">{displayStats.todayReviewWords}</p>
                   <p className="text-xs text-muted-foreground">复习</p>
                 </div>
               </ProgressRing>
               <ProgressRing
-                progress={Math.round((stats.todayStudyMinutes / 30) * 100)}
+                progress={Math.min(100, Math.round((displayStats.todayStudyMinutes / 30) * 100))}
                 size={100}
                 strokeWidth={8}
               >
                 <div className="text-center">
-                  <p className="text-lg font-bold">{stats.todayStudyMinutes}</p>
+                  <p className="text-lg font-bold">{displayStats.todayStudyMinutes}</p>
                   <p className="text-xs text-muted-foreground">分钟</p>
                 </div>
               </ProgressRing>

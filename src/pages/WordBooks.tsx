@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { WordBookCard } from '@/components/wordbook/WordBookCard';
-import { mockWordBooks } from '@/data/mockData';
+import { useWordbooks } from '@/hooks/useWordbooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Filter } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 
 const WordBooks = () => {
   const navigate = useNavigate();
+  const { data: wordbooks, isLoading } = useWordbooks();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -17,18 +18,27 @@ const WordBooks = () => {
     { id: 'exam', label: '考试词库' },
     { id: 'daily', label: '日常口语' },
     { id: 'business', label: '商务英语' },
-    { id: 'custom', label: '我的词本' },
   ];
 
-  const filteredBooks = mockWordBooks.filter((book) => {
+  const filteredBooks = wordbooks?.filter((book) => {
     const matchesSearch = book.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !activeCategory || book.category === activeCategory;
     return matchesSearch && matchesCategory;
-  });
+  }) || [];
 
   const handleBookClick = (bookId: string) => {
     navigate(`/wordbooks/${bookId}`);
   };
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -39,10 +49,6 @@ const WordBooks = () => {
             <h1 className="text-3xl font-bold text-foreground">词库</h1>
             <p className="text-muted-foreground mt-1">选择词库开始学习</p>
           </div>
-          <Button className="gradient-primary shadow-primary">
-            <Plus className="w-4 h-4 mr-2" />
-            导入词库
-          </Button>
         </div>
 
         {/* Search & Filter */}
@@ -79,7 +85,19 @@ const WordBooks = () => {
               className="animate-fade-in"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <WordBookCard book={book} onClick={() => handleBookClick(book.id)} />
+              <WordBookCard 
+                book={{
+                  id: book.id,
+                  name: book.name,
+                  description: book.description || '',
+                  icon: book.icon,
+                  wordCount: book.word_count || 0,
+                  progress: book.progress || 0,
+                  category: book.category as 'exam' | 'daily' | 'business' | 'academic' | 'custom',
+                  level: book.level,
+                }}
+                onClick={() => handleBookClick(book.id)} 
+              />
             </div>
           ))}
         </div>
