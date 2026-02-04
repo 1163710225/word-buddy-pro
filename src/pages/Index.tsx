@@ -4,16 +4,39 @@ import { StatsCard } from '@/components/dashboard/StatsCard';
 import { TodayTask } from '@/components/dashboard/TodayTask';
 import { WeeklyChart } from '@/components/dashboard/WeeklyChart';
 import { WordBookCard } from '@/components/wordbook/WordBookCard';
-import { mockUserStats, mockWordBooks } from '@/data/mockData';
-import { BookOpen, Brain, Flame, Trophy } from 'lucide-react';
+import { useUserStats } from '@/hooks/useUserStats';
+import { useWordbooks } from '@/hooks/useWordbooks';
+import { BookOpen, Brain, Flame, Trophy, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Index = () => {
   const navigate = useNavigate();
-  const stats = mockUserStats;
+  const { data: stats, isLoading: statsLoading } = useUserStats();
+  const { data: wordbooks, isLoading: wordbooksLoading } = useWordbooks();
 
   const handleBookClick = (bookId: string) => {
     navigate(`/wordbooks/${bookId}`);
+  };
+
+  if (statsLoading || wordbooksLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const displayStats = stats || {
+    totalWords: 0,
+    masteredWords: 0,
+    learningWords: 0,
+    streak: 0,
+    todayNewWords: 0,
+    todayReviewWords: 0,
+    todayStudyMinutes: 0,
+    weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
   };
 
   return (
@@ -29,28 +52,28 @@ const Index = () => {
         <div className="grid grid-cols-4 gap-6 mb-8">
           <StatsCard
             title="累计学习"
-            value={stats.totalWords}
+            value={displayStats.totalWords}
             subtitle="个单词"
             icon={<BookOpen className="w-6 h-6" />}
             variant="primary"
           />
           <StatsCard
             title="已掌握"
-            value={stats.masteredWords}
+            value={displayStats.masteredWords}
             subtitle="个单词"
             icon={<Trophy className="w-6 h-6" />}
             variant="success"
           />
           <StatsCard
             title="学习中"
-            value={stats.learningWords}
+            value={displayStats.learningWords}
             subtitle="个单词"
             icon={<Brain className="w-6 h-6" />}
             trend={{ value: 12, isPositive: true }}
           />
           <StatsCard
             title="连续打卡"
-            value={stats.streak}
+            value={displayStats.streak}
             subtitle="天"
             icon={<Flame className="w-6 h-6" />}
             variant="accent"
@@ -62,11 +85,11 @@ const Index = () => {
           {/* Left Column */}
           <div className="col-span-2 space-y-8">
             <TodayTask
-              newWords={{ current: stats.todayNewWords, target: 20 }}
-              reviewWords={{ current: stats.todayReviewWords, target: 50 }}
-              studyMinutes={{ current: stats.todayStudyMinutes, target: 30 }}
+              newWords={{ current: displayStats.todayNewWords, target: 20 }}
+              reviewWords={{ current: displayStats.todayReviewWords, target: 50 }}
+              studyMinutes={{ current: displayStats.todayStudyMinutes, target: 30 }}
             />
-            <WeeklyChart data={stats.weeklyProgress} />
+            <WeeklyChart data={displayStats.weeklyProgress} />
           </div>
 
           {/* Right Column - Recent Books */}
@@ -78,13 +101,25 @@ const Index = () => {
               </Link>
             </div>
             <div className="space-y-4">
-              {mockWordBooks.slice(0, 3).map((book) => (
+              {wordbooks?.slice(0, 3).map((book) => (
                 <WordBookCard 
                   key={book.id} 
-                  book={book} 
+                  book={{
+                    id: book.id,
+                    name: book.name,
+                    description: book.description || '',
+                    icon: book.icon,
+                    wordCount: book.word_count || 0,
+                    progress: book.progress || 0,
+                    category: book.category as 'exam' | 'daily' | 'business' | 'academic' | 'custom',
+                    level: book.level,
+                  }}
                   onClick={() => handleBookClick(book.id)}
                 />
               ))}
+              {(!wordbooks || wordbooks.length === 0) && (
+                <p className="text-muted-foreground text-center py-8">暂无词库</p>
+              )}
             </div>
           </div>
         </div>

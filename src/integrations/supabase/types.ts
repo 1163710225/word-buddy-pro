@@ -14,16 +14,339 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      menu_settings: {
+        Row: {
+          created_at: string
+          id: string
+          is_visible: boolean
+          menu_key: string
+          menu_name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          menu_key: string
+          menu_name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          menu_key?: string
+          menu_name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      study_sessions: {
+        Row: {
+          correct_count: number
+          created_at: string
+          duration_minutes: number
+          id: string
+          mode: string
+          user_id: string
+          wordbook_id: string | null
+          words_studied: number
+        }
+        Insert: {
+          correct_count?: number
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          mode: string
+          user_id: string
+          wordbook_id?: string | null
+          words_studied?: number
+        }
+        Update: {
+          correct_count?: number
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          mode?: string
+          user_id?: string
+          wordbook_id?: string | null
+          words_studied?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_sessions_wordbook_id_fkey"
+            columns: ["wordbook_id"]
+            isOneToOne: false
+            referencedRelation: "wordbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_daily_stats: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          new_words: number
+          review_words: number
+          study_minutes: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          new_words?: number
+          review_words?: number
+          study_minutes?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          new_words?: number
+          review_words?: number
+          study_minutes?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_starred_words: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          word_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          word_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          word_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_starred_words_word_id_fkey"
+            columns: ["word_id"]
+            isOneToOne: false
+            referencedRelation: "words"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_word_progress: {
+        Row: {
+          correct_count: number
+          created_at: string
+          id: string
+          last_reviewed: string | null
+          mastery: number
+          next_review: string | null
+          review_count: number
+          updated_at: string
+          user_id: string
+          word_id: string
+        }
+        Insert: {
+          correct_count?: number
+          created_at?: string
+          id?: string
+          last_reviewed?: string | null
+          mastery?: number
+          next_review?: string | null
+          review_count?: number
+          updated_at?: string
+          user_id: string
+          word_id: string
+        }
+        Update: {
+          correct_count?: number
+          created_at?: string
+          id?: string
+          last_reviewed?: string | null
+          mastery?: number
+          next_review?: string | null
+          review_count?: number
+          updated_at?: string
+          user_id?: string
+          word_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_word_progress_word_id_fkey"
+            columns: ["word_id"]
+            isOneToOne: false
+            referencedRelation: "words"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wordbooks: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          level: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          level?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          level?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      words: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          difficulty: string | null
+          example: string | null
+          example_translation: string | null
+          id: string
+          meaning: string
+          phonetic: string | null
+          sort_order: number
+          updated_at: string
+          word: string
+          wordbook_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          difficulty?: string | null
+          example?: string | null
+          example_translation?: string | null
+          id?: string
+          meaning: string
+          phonetic?: string | null
+          sort_order?: number
+          updated_at?: string
+          word: string
+          wordbook_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          difficulty?: string | null
+          example?: string | null
+          example_translation?: string | null
+          id?: string
+          meaning?: string
+          phonetic?: string | null
+          sort_order?: number
+          updated_at?: string
+          word?: string
+          wordbook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "words_wordbook_id_fkey"
+            columns: ["wordbook_id"]
+            isOneToOne: false
+            referencedRelation: "wordbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +473,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
