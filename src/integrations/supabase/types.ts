@@ -142,6 +142,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_meaning_progress: {
+        Row: {
+          correct_count: number
+          created_at: string
+          id: string
+          last_reviewed: string | null
+          mastery: number
+          meaning_id: string
+          next_review: string | null
+          review_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          correct_count?: number
+          created_at?: string
+          id?: string
+          last_reviewed?: string | null
+          mastery?: number
+          meaning_id: string
+          next_review?: string | null
+          review_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          correct_count?: number
+          created_at?: string
+          id?: string
+          last_reviewed?: string | null
+          mastery?: number
+          meaning_id?: string
+          next_review?: string | null
+          review_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_meaning_progress_meaning_id_fkey"
+            columns: ["meaning_id"]
+            isOneToOne: false
+            referencedRelation: "word_meanings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -239,6 +286,128 @@ export type Database = {
           },
         ]
       }
+      word_meanings: {
+        Row: {
+          created_at: string
+          example: string | null
+          example_translation: string | null
+          frequency_score: number
+          id: string
+          is_exam_focus: boolean | null
+          is_primary: boolean | null
+          meaning: string
+          meaning_order: number
+          part_of_speech: string | null
+          updated_at: string
+          usage_note: string | null
+          word_id: string
+        }
+        Insert: {
+          created_at?: string
+          example?: string | null
+          example_translation?: string | null
+          frequency_score?: number
+          id?: string
+          is_exam_focus?: boolean | null
+          is_primary?: boolean | null
+          meaning: string
+          meaning_order?: number
+          part_of_speech?: string | null
+          updated_at?: string
+          usage_note?: string | null
+          word_id: string
+        }
+        Update: {
+          created_at?: string
+          example?: string | null
+          example_translation?: string | null
+          frequency_score?: number
+          id?: string
+          is_exam_focus?: boolean | null
+          is_primary?: boolean | null
+          meaning?: string
+          meaning_order?: number
+          part_of_speech?: string | null
+          updated_at?: string
+          usage_note?: string | null
+          word_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "word_meanings_word_id_fkey"
+            columns: ["word_id"]
+            isOneToOne: false
+            referencedRelation: "words"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      word_videos: {
+        Row: {
+          created_at: string
+          difficulty: string | null
+          end_time: number | null
+          id: string
+          meaning_id: string | null
+          start_time: number | null
+          thumbnail_url: string | null
+          transcript: string | null
+          transcript_translation: string | null
+          updated_at: string
+          video_source: string | null
+          video_title: string | null
+          video_url: string
+          word_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: string | null
+          end_time?: number | null
+          id?: string
+          meaning_id?: string | null
+          start_time?: number | null
+          thumbnail_url?: string | null
+          transcript?: string | null
+          transcript_translation?: string | null
+          updated_at?: string
+          video_source?: string | null
+          video_title?: string | null
+          video_url: string
+          word_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string | null
+          end_time?: number | null
+          id?: string
+          meaning_id?: string | null
+          start_time?: number | null
+          thumbnail_url?: string | null
+          transcript?: string | null
+          transcript_translation?: string | null
+          updated_at?: string
+          video_source?: string | null
+          video_title?: string | null
+          video_url?: string
+          word_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "word_videos_meaning_id_fkey"
+            columns: ["meaning_id"]
+            isOneToOne: false
+            referencedRelation: "word_meanings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_videos_word_id_fkey"
+            columns: ["word_id"]
+            isOneToOne: false
+            referencedRelation: "words"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wordbooks: {
         Row: {
           category: string
@@ -283,9 +452,12 @@ export type Database = {
           audio_url: string | null
           created_at: string
           difficulty: string | null
+          exam_priority: number | null
           example: string | null
           example_translation: string | null
+          frequency_rank: number | null
           id: string
+          is_high_frequency: boolean | null
           meaning: string
           phonetic: string | null
           sort_order: number
@@ -297,9 +469,12 @@ export type Database = {
           audio_url?: string | null
           created_at?: string
           difficulty?: string | null
+          exam_priority?: number | null
           example?: string | null
           example_translation?: string | null
+          frequency_rank?: number | null
           id?: string
+          is_high_frequency?: boolean | null
           meaning: string
           phonetic?: string | null
           sort_order?: number
@@ -311,9 +486,12 @@ export type Database = {
           audio_url?: string | null
           created_at?: string
           difficulty?: string | null
+          exam_priority?: number | null
           example?: string | null
           example_translation?: string | null
+          frequency_rank?: number | null
           id?: string
+          is_high_frequency?: boolean | null
           meaning?: string
           phonetic?: string | null
           sort_order?: number

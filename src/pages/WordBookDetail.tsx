@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useWordbookWithProgress, useToggleStarWord } from '@/hooks/useWordbooks';
+import { WordDetailModal } from '@/components/word/WordDetailModal';
 import {
   ArrowLeft,
   Search,
@@ -17,6 +19,8 @@ import {
   Loader2,
   Play,
   CheckCircle2,
+  Flame,
+  TrendingUp,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -29,6 +33,8 @@ const WordBookDetail = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'new' | 'learning' | 'mastered'>('all');
+  const [selectedWord, setSelectedWord] = useState<any>(null);
+  const [showWordDetail, setShowWordDetail] = useState(false);
 
   const playAudio = (word: string) => {
     const utterance = new SpeechSynthesisUtterance(word);
@@ -38,6 +44,11 @@ const WordBookDetail = () => {
 
   const handleToggleStar = (wordId: string, isStarred: boolean) => {
     toggleStar.mutate({ wordId, isStarred });
+  };
+
+  const handleWordClick = (word: any) => {
+    setSelectedWord(word);
+    setShowWordDetail(true);
   };
 
   const getMasteryColor = (mastery: number) => {
@@ -209,21 +220,37 @@ const WordBookDetail = () => {
               {filteredWords.map((word: any, index: number) => (
                 <div
                   key={word.id}
-                  className="bg-card rounded-xl p-4 shadow-card hover:shadow-card-hover transition-all duration-300 animate-fade-in"
+                  className="bg-card rounded-xl p-4 shadow-card hover:shadow-card-hover transition-all duration-300 animate-fade-in cursor-pointer"
                   style={{ animationDelay: `${index * 0.05}s` }}
+                  onClick={() => handleWordClick(word)}
                 >
                   <div className="flex items-center gap-4">
                     {/* Word Info */}
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <span className="text-xl font-semibold text-foreground">{word.word}</span>
+                        <span className="text-xl font-semibold text-foreground hover:text-primary transition-colors">{word.word}</span>
                         <span className="text-muted-foreground text-sm">{word.phonetic}</span>
                         <button
-                          onClick={() => playAudio(word.word)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playAudio(word.word);
+                          }}
                           className="p-1.5 rounded-full hover:bg-secondary transition-colors"
                         >
                           <Volume2 className="w-4 h-4 text-primary" />
                         </button>
+                        {word.is_high_frequency && (
+                          <Badge className="bg-destructive text-destructive-foreground text-xs">
+                            <Flame className="w-3 h-3 mr-0.5" />
+                            高频
+                          </Badge>
+                        )}
+                        {word.exam_priority > 80 && (
+                          <Badge className="bg-accent text-accent-foreground text-xs">
+                            <TrendingUp className="w-3 h-3 mr-0.5" />
+                            重点
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-muted-foreground mt-1">{word.meaning}</p>
                     </div>
@@ -270,7 +297,10 @@ const WordBookDetail = () => {
 
                       {/* Star */}
                       <button
-                        onClick={() => handleToggleStar(word.id, word.is_starred)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleStar(word.id, word.is_starred);
+                        }}
                         className="p-2 rounded-full hover:bg-secondary transition-colors"
                       >
                         <Star
@@ -335,6 +365,14 @@ const WordBookDetail = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Word Detail Modal */}
+        <WordDetailModal
+          word={selectedWord}
+          open={showWordDetail}
+          onOpenChange={setShowWordDetail}
+          onToggleStar={handleToggleStar}
+        />
       </div>
     </AppLayout>
   );
