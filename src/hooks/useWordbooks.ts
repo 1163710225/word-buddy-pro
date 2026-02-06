@@ -27,6 +27,10 @@ export interface Word {
   audio_url: string | null;
   difficulty: string;
   sort_order: number;
+  // 新增智能学习字段
+  frequency_rank: number;
+  is_high_frequency: boolean;
+  exam_priority: number;
 }
 
 export function useWordbooks() {
@@ -66,6 +70,8 @@ interface WordWithProgress extends Word {
   review_count?: number;
   correct_count?: number;
   is_starred?: boolean;
+  meanings_count?: number;
+  videos_count?: number;
 }
 
 export function useWordbookWithProgress(wordbookId: string | undefined) {
