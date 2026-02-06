@@ -116,8 +116,8 @@ const WordBookDetail = () => {
   return (
     <AppLayout>
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        {/* Header - Hidden on mobile since MobileHeader shows back button */}
+        <div className="hidden md:flex items-center gap-4 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate('/wordbooks')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -132,63 +132,72 @@ const WordBookDetail = () => {
           </div>
         </div>
 
+        {/* Mobile Header */}
+        <div className="flex md:hidden items-center gap-3 mb-4">
+          <span className="text-2xl">{wordbook.icon}</span>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">{wordbook.name}</h1>
+            <p className="text-muted-foreground text-xs">{wordbook.description}</p>
+          </div>
+        </div>
+
         {/* Stats Bar */}
-        <div className="bg-card rounded-2xl p-6 mb-6 shadow-card">
-          <div className="grid grid-cols-4 gap-6">
+        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 mb-4 md:mb-6 shadow-card">
+          <div className="grid grid-cols-4 gap-2 md:gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{wordbook.word_count}</div>
-              <div className="text-sm text-muted-foreground">总词数</div>
+              <div className="text-xl md:text-3xl font-bold text-primary">{wordbook.word_count}</div>
+              <div className="text-xs md:text-sm text-muted-foreground">总词数</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-500">{wordbook.masteredCount || 0}</div>
-              <div className="text-sm text-muted-foreground">已掌握</div>
+              <div className="text-xl md:text-3xl font-bold text-success">{wordbook.masteredCount || 0}</div>
+              <div className="text-xs md:text-sm text-muted-foreground">已掌握</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-amber-500">{wordbook.learningCount || 0}</div>
-              <div className="text-sm text-muted-foreground">学习中</div>
+              <div className="text-xl md:text-3xl font-bold text-warning">{wordbook.learningCount || 0}</div>
+              <div className="text-xs md:text-sm text-muted-foreground">学习中</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-foreground">{wordbook.level}</div>
-              <div className="text-sm text-muted-foreground">难度等级</div>
+              <div className="text-xl md:text-3xl font-bold text-foreground">{wordbook.level}</div>
+              <div className="text-xs md:text-sm text-muted-foreground">难度</div>
             </div>
           </div>
 
-          <div className="mt-6">
-            <div className="flex justify-between text-sm mb-2">
+          <div className="mt-4 md:mt-6">
+            <div className="flex justify-between text-xs md:text-sm mb-2">
               <span className="text-muted-foreground">学习进度</span>
               <span className="font-medium">{wordbook.progress}%</span>
             </div>
-            <Progress value={wordbook.progress} className="h-3" />
+            <Progress value={wordbook.progress} className="h-2 md:h-3" />
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 mt-6">
+          <div className="flex gap-3 md:gap-4 mt-4 md:mt-6">
             <Button
-              className="flex-1 gradient-primary shadow-primary"
+              className="flex-1 gradient-primary shadow-primary text-sm md:text-base"
               onClick={() => navigate('/study', { state: { wordbookId: id } })}
             >
               <Play className="w-4 h-4 mr-2" />
               开始学习
             </Button>
-            <Button variant="outline" className="flex-1" onClick={() => navigate('/review')}>
+            <Button variant="outline" className="flex-1 text-sm md:text-base" onClick={() => navigate('/review')}>
               <Brain className="w-4 h-4 mr-2" />
               复习单词
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
           {/* Word List */}
-          <div className="col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-3 md:space-y-4">
             {/* Search & Filter */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 md:w-5 h-4 md:h-5 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="搜索单词..."
-                  className="pl-10"
+                  className="pl-9 md:pl-10 text-sm md:text-base"
                 />
               </div>
               <Button
@@ -196,103 +205,94 @@ const WordBookDetail = () => {
                 size="sm"
                 onClick={() => setShowStarredOnly(!showStarredOnly)}
               >
-                <Star className={`w-4 h-4 mr-1 ${showStarredOnly ? 'fill-current' : ''}`} />
-                收藏
+                <Star className={`w-4 h-4 ${showStarredOnly ? 'fill-current' : ''}`} />
+                <span className="hidden sm:inline ml-1">收藏</span>
               </Button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2">
               {filters.map((filter) => (
                 <Button
                   key={filter.id}
                   variant={activeFilter === filter.id ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setActiveFilter(filter.id as typeof activeFilter)}
-                  className={activeFilter === filter.id ? 'gradient-primary' : ''}
+                  className={`${activeFilter === filter.id ? 'gradient-primary' : ''} whitespace-nowrap flex-shrink-0 text-xs md:text-sm`}
                 >
                   {filter.label}
-                  <span className="ml-1.5 text-xs opacity-70">({filter.count})</span>
+                  <span className="ml-1 text-xs opacity-70">({filter.count})</span>
                 </Button>
               ))}
             </div>
 
-            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+            <div className="space-y-2 md:space-y-3 max-h-[50vh] md:max-h-[600px] overflow-y-auto pr-1 md:pr-2">
               {filteredWords.map((word: any, index: number) => (
                 <div
                   key={word.id}
-                  className="bg-card rounded-xl p-4 shadow-card hover:shadow-card-hover transition-all duration-300 animate-fade-in cursor-pointer"
+                  className="bg-card rounded-lg md:rounded-xl p-3 md:p-4 shadow-card hover:shadow-card-hover transition-all duration-300 animate-fade-in cursor-pointer"
                   style={{ animationDelay: `${index * 0.05}s` }}
                   onClick={() => handleWordClick(word)}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 md:gap-4">
                     {/* Word Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl font-semibold text-foreground hover:text-primary transition-colors">{word.word}</span>
-                        <span className="text-muted-foreground text-sm">{word.phonetic}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                        <span className="text-base md:text-xl font-semibold text-foreground">{word.word}</span>
+                        <span className="text-muted-foreground text-xs md:text-sm hidden sm:inline">{word.phonetic}</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             playAudio(word.word);
                           }}
-                          className="p-1.5 rounded-full hover:bg-secondary transition-colors"
+                          className="p-1 md:p-1.5 rounded-full hover:bg-secondary transition-colors"
                         >
-                          <Volume2 className="w-4 h-4 text-primary" />
+                          <Volume2 className="w-3 h-3 md:w-4 md:h-4 text-primary" />
                         </button>
                         {word.is_high_frequency && (
-                          <Badge className="bg-destructive text-destructive-foreground text-xs">
+                          <Badge className="bg-destructive text-destructive-foreground text-xs scale-90 md:scale-100">
                             <Flame className="w-3 h-3 mr-0.5" />
                             高频
                           </Badge>
                         )}
-                        {word.exam_priority > 80 && (
-                          <Badge className="bg-accent text-accent-foreground text-xs">
-                            <TrendingUp className="w-3 h-3 mr-0.5" />
-                            重点
-                          </Badge>
-                        )}
                       </div>
-                      <p className="text-muted-foreground mt-1">{word.meaning}</p>
+                      <p className="text-muted-foreground mt-1 text-sm md:text-base line-clamp-2">{word.meaning}</p>
                     </div>
 
-                    {/* Mastery */}
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className={cn('text-sm font-medium', getMasteryColor(word.mastery || 0))}>
+                    {/* Mastery - Simplified on mobile */}
+                    <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+                      <div className="hidden sm:block text-right">
+                        <div className={cn('text-xs md:text-sm font-medium', getMasteryColor(word.mastery || 0))}>
                           {getMasteryLabel(word.mastery || 0)}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          掌握度 {word.mastery || 0}%
+                          {word.mastery || 0}%
                         </div>
                       </div>
 
-                      {/* Progress Ring */}
-                      <div className="relative w-12 h-12">
-                        <svg className="w-12 h-12 -rotate-90">
+                      {/* Progress Ring - Smaller on mobile */}
+                      <div className="relative w-8 h-8 md:w-12 md:h-12">
+                        <svg className="w-8 h-8 md:w-12 md:h-12 -rotate-90">
                           <circle
-                            cx="24"
-                            cy="24"
-                            r="20"
+                            cx="50%"
+                            cy="50%"
+                            r="35%"
                             fill="none"
                             stroke="currentColor"
-                            strokeWidth="4"
+                            strokeWidth="3"
                             className="text-secondary"
                           />
                           <circle
-                            cx="24"
-                            cy="24"
-                            r="20"
+                            cx="50%"
+                            cy="50%"
+                            r="35%"
                             fill="none"
                             stroke="currentColor"
-                            strokeWidth="4"
-                            strokeDasharray={`${((word.mastery || 0) / 100) * 126} 126`}
+                            strokeWidth="3"
+                            strokeDasharray={`${((word.mastery || 0) / 100) * 70} 100`}
                             strokeLinecap="round"
                             className={getMasteryColor(word.mastery || 0)}
                           />
                         </svg>
-                        {(word.mastery || 0) >= 80 && (
-                          <CheckCircle2 className="absolute inset-0 m-auto w-5 h-5 text-green-500" />
-                        )}
                       </div>
 
                       {/* Star */}
@@ -301,11 +301,11 @@ const WordBookDetail = () => {
                           e.stopPropagation();
                           handleToggleStar(word.id, word.is_starred);
                         }}
-                        className="p-2 rounded-full hover:bg-secondary transition-colors"
+                        className="p-1.5 md:p-2 rounded-full hover:bg-secondary transition-colors"
                       >
                         <Star
                           className={cn(
-                            'w-5 h-5 transition-colors',
+                            'w-4 h-4 md:w-5 md:h-5 transition-colors',
                             word.is_starred
                               ? 'fill-yellow-400 text-yellow-400'
                               : 'text-muted-foreground'
@@ -314,28 +314,20 @@ const WordBookDetail = () => {
                       </button>
                     </div>
                   </div>
-
-                  {/* Example */}
-                  {word.example && (
-                    <div className="mt-3 pt-3 border-t border-border">
-                      <p className="text-sm text-foreground italic">"{word.example}"</p>
-                      <p className="text-xs text-muted-foreground mt-1">{word.example_translation}</p>
-                    </div>
-                  )}
                 </div>
               ))}
 
               {filteredWords.length === 0 && (
-                <div className="text-center py-16">
-                  <BookOpen className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-muted-foreground">没有找到匹配的单词</p>
+                <div className="text-center py-12 md:py-16">
+                  <BookOpen className="w-12 h-12 md:w-16 md:h-16 mx-auto text-muted-foreground/30 mb-4" />
+                  <p className="text-muted-foreground text-sm md:text-base">没有找到匹配的单词</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Chart */}
-          <Card className="glass-card h-fit">
+          {/* Chart - Hidden on mobile, shown on lg+ */}
+          <Card className="glass-card h-fit hidden lg:block">
             <CardHeader>
               <CardTitle>掌握程度分布</CardTitle>
             </CardHeader>

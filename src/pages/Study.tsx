@@ -100,13 +100,13 @@ const Study = () => {
     return (
       <AppLayout>
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">选择学习模式</h1>
-            <p className="text-muted-foreground mt-1">根据你的需求选择合适的学习方式</p>
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">选择学习模式</h1>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">根据你的需求选择合适的学习方式</p>
           </div>
 
           {/* Wordbook Selection */}
-          <div className="mb-8">
+          <div className="mb-6 md:mb-8">
             <label className="block text-sm font-medium mb-2">选择词库</label>
             {wordbooksLoading ? (
               <div className="flex items-center gap-2 text-muted-foreground">
@@ -115,7 +115,7 @@ const Study = () => {
               </div>
             ) : (
               <Select value={selectedWordbookId} onValueChange={setSelectedWordbookId}>
-                <SelectTrigger className="w-full max-w-md">
+                <SelectTrigger className="w-full md:max-w-md">
                   <SelectValue placeholder="请选择要学习的词库" />
                 </SelectTrigger>
                 <SelectContent>
@@ -129,7 +129,7 @@ const Study = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             {studyModes.map((mode, index) => (
               <div
                 key={mode.id}
@@ -150,7 +150,7 @@ const Study = () => {
           </div>
 
           {!selectedWordbookId && (
-            <p className="text-center text-amber-500 mt-4">请先选择词库</p>
+            <p className="text-center text-amber-500 mt-4 text-sm md:text-base">请先选择词库</p>
           )}
         </div>
       </AppLayout>
