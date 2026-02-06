@@ -44,15 +44,15 @@ const WordBooks = () => {
     <AppLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6 md:mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">词库</h1>
-            <p className="text-muted-foreground mt-1">选择词库开始学习</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">词库</h1>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">选择词库开始学习</p>
           </div>
         </div>
 
         {/* Search & Filter */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4 mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
@@ -62,14 +62,14 @@ const WordBooks = () => {
               className="pl-10"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
             {categories.map((cat) => (
               <Button
                 key={cat.id || 'all'}
                 variant={activeCategory === cat.id ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setActiveCategory(cat.id)}
-                className={activeCategory === cat.id ? 'gradient-primary' : ''}
+                className={`${activeCategory === cat.id ? 'gradient-primary' : ''} whitespace-nowrap flex-shrink-0`}
               >
                 {cat.label}
               </Button>
@@ -78,7 +78,7 @@ const WordBooks = () => {
         </div>
 
         {/* Word Books Grid */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {filteredBooks.map((book, index) => (
             <div
               key={book.id}

@@ -169,6 +169,13 @@
     backdrop-filter: blur(12px);
     background: hsl(var(--background) / 0.8);
   }
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 /* 自定义滚动条 */
@@ -189,4 +196,15 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Mobile touch improvements */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
