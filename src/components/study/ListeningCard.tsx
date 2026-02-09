@@ -3,6 +3,7 @@ import { Word } from '@/types/vocabulary';
 import { cn } from '@/lib/utils';
 import { Volume2, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { speakWord } from '@/lib/speech';
 
 interface ListeningCardProps {
   word: Word;
@@ -17,18 +18,14 @@ export function ListeningCard({ word, options, onAnswer }: ListeningCardProps) {
 
   const correctAnswer = word.word;
 
-  const speakWord = () => {
-    const utterance = new SpeechSynthesisUtterance(word.word);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.8;
-    speechSynthesis.speak(utterance);
-    setHasPlayed(true);
+  const playWord = () => {
+    speakWord(word.word).then(() => setHasPlayed(true));
   };
 
   useEffect(() => {
     // Auto play on mount
     const timer = setTimeout(() => {
-      speakWord();
+      playWord();
     }, 500);
     return () => clearTimeout(timer);
   }, [word.id]);
@@ -56,7 +53,7 @@ export function ListeningCard({ word, options, onAnswer }: ListeningCardProps) {
         <div className="text-center mb-8">
           <div className="inline-flex flex-col items-center">
             <button
-              onClick={speakWord}
+              onClick={playWord}
               className={cn(
                 'w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300',
                 'bg-primary/10 hover:bg-primary/20 hover:scale-105 active:scale-95',
@@ -69,7 +66,7 @@ export function ListeningCard({ word, options, onAnswer }: ListeningCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={speakWord}
+              onClick={playWord}
               className="mt-2"
             >
               <RotateCcw className="w-4 h-4 mr-2" />

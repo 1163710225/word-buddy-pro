@@ -37,10 +37,17 @@ const pathMap: Record<string, string> = {
 
 export function MobileNav() {
   const location = useLocation();
-  const { data: menuSettings } = useMenuSettings();
+  const { data: menuSettings, isLoading } = useMenuSettings();
 
-  // Show only first 5 visible menus in bottom nav
-  const visibleMenus = menuSettings?.filter(m => m.is_visible).slice(0, 5) || [];
+  // Default fallback menus to prevent flash while loading
+  const defaultMenus = [
+    { id: 'home', menu_key: 'home', menu_name: '首页', is_visible: true },
+    { id: 'wordbooks', menu_key: 'wordbooks', menu_name: '词库', is_visible: true },
+    { id: 'study', menu_key: 'study', menu_name: '学习', is_visible: true },
+    { id: 'review', menu_key: 'review', menu_name: '复习', is_visible: true },
+    { id: 'games', menu_key: 'games', menu_name: '小游戏', is_visible: true },
+  ];
+  const visibleMenus = (menuSettings?.filter(m => m.is_visible).slice(0, 5) || (isLoading ? defaultMenus : []));
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 safe-area-bottom">
