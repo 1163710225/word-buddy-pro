@@ -21,9 +21,14 @@ import {
   CheckCircle2,
   Flame,
   TrendingUp,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
+import { speakWord } from '@/lib/speech';
+
+const WORDS_PER_PAGE = 20;
 
 const WordBookDetail = () => {
   const { id } = useParams();
@@ -35,11 +40,10 @@ const WordBookDetail = () => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'new' | 'learning' | 'mastered'>('all');
   const [selectedWord, setSelectedWord] = useState<any>(null);
   const [showWordDetail, setShowWordDetail] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const playAudio = (word: string) => {
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = 'en-US';
-    speechSynthesis.speak(utterance);
+    speakWord(word);
   };
 
   const handleToggleStar = (wordId: string, isStarred: boolean) => {
@@ -99,6 +103,16 @@ const WordBookDetail = () => {
     
     return matchesSearch && matchesStarred && matchesFilter;
   }) || [];
+
+  // Pagination
+  const totalPages = Math.ceil(filteredWords.length / WORDS_PER_PAGE);
+  const paginatedWords = filteredWords.slice((currentPage - 1) * WORDS_PER_PAGE, currentPage * WORDS_PER_PAGE);
+  
+  // Reset page when filter changes
+  const handleFilterChange = (filter: typeof activeFilter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1);
+  };
 
   const filters = [
     { id: 'all', label: '全部', count: wordbook.words?.length || 0 },
@@ -216,7 +230,7 @@ const WordBookDetail = () => {
                   key={filter.id}
                   variant={activeFilter === filter.id ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setActiveFilter(filter.id as typeof activeFilter)}
+                  onClick={() => handleFilterChange(filter.id as typeof activeFilter)}
                   className={`${activeFilter === filter.id ? 'gradient-primary' : ''} whitespace-nowrap flex-shrink-0 text-xs md:text-sm`}
                 >
                   {filter.label}
@@ -225,8 +239,8 @@ const WordBookDetail = () => {
               ))}
             </div>
 
-            <div className="space-y-2 md:space-y-3 max-h-[50vh] md:max-h-[600px] overflow-y-auto pr-1 md:pr-2">
-              {filteredWords.map((word: any, index: number) => (
+            <div className="space-y-2 md:space-y-3">
+              {paginatedWords.map((word: any, index: number) => (
                 <div
                   key={word.id}
                   className="bg-card rounded-lg md:rounded-xl p-3 md:p-4 shadow-card hover:shadow-card-hover transition-all duration-300 animate-fade-in cursor-pointer"
@@ -324,6 +338,36 @@ const WordBookDetail = () => {
                 </div>
               )}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage(p => p - 1)}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-xs md:text-sm text-muted-foreground px-2">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <span className="text-[10px] md:text-xs text-muted-foreground ml-2">
+                  共 {filteredWords.length} 词
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Chart - Hidden on mobile, shown on lg+ */}
