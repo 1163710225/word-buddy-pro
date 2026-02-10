@@ -3,6 +3,7 @@ import { Word } from '@/types/vocabulary';
 import { cn } from '@/lib/utils';
 import { Volume2, Star, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { speakWord as speak } from '@/lib/speech';
 
 interface FlashCardProps {
   word: Word;
@@ -16,10 +17,8 @@ export function FlashCard({ word, onKnow, onDontKnow }: FlashCardProps) {
 
   const handleFlip = () => setIsFlipped(!isFlipped);
 
-  const speakWord = () => {
-    const utterance = new SpeechSynthesisUtterance(word.word);
-    utterance.lang = 'en-US';
-    speechSynthesis.speak(utterance);
+  const handleSpeak = () => {
+    speak(word.word);
   };
 
   return (
@@ -44,7 +43,7 @@ export function FlashCard({ word, onKnow, onDontKnow }: FlashCardProps) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                speakWord();
+                handleSpeak();
               }}
               className="p-2 rounded-full hover:bg-secondary transition-colors"
             >

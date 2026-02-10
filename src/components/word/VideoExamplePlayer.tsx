@@ -1,8 +1,9 @@
- import { useState } from 'react';
- import { cn } from '@/lib/utils';
- import { Play, Pause, Volume2, ExternalLink, Film } from 'lucide-react';
- import { Button } from '@/components/ui/button';
- import { Badge } from '@/components/ui/badge';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { Play, Pause, Volume2, ExternalLink, Film } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { speakText } from '@/lib/speech';
  
  interface WordVideo {
    id: string;
@@ -69,13 +70,9 @@
      }
    };
  
-   const speakTranscript = () => {
-     if (video.transcript) {
-       const utterance = new SpeechSynthesisUtterance(video.transcript);
-       utterance.lang = 'en-US';
-       speechSynthesis.speak(utterance);
-     }
-   };
+    const speakTranscript = () => {
+      if (video.transcript) speakText(video.transcript);
+    };
  
    return (
      <div className={cn('rounded-xl overflow-hidden bg-card border border-border', className)}>

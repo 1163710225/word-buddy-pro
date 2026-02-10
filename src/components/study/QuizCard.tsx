@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Word } from '@/types/vocabulary';
 import { cn } from '@/lib/utils';
 import { Volume2, CheckCircle2, XCircle } from 'lucide-react';
+import { speakWord as speak } from '@/lib/speech';
 
 interface QuizCardProps {
   word: Word;
@@ -32,10 +33,8 @@ export function QuizCard({ word, options, mode, onAnswer }: QuizCardProps) {
     }, 1500);
   };
 
-  const speakWord = () => {
-    const utterance = new SpeechSynthesisUtterance(word.word);
-    utterance.lang = 'en-US';
-    speechSynthesis.speak(utterance);
+  const handleSpeak = () => {
+    speak(word.word);
   };
 
   return (
@@ -47,7 +46,7 @@ export function QuizCard({ word, options, mode, onAnswer }: QuizCardProps) {
             <div className="flex items-center justify-center gap-4">
               <h2 className="text-4xl font-bold text-foreground">{question}</h2>
               <button
-                onClick={speakWord}
+                onClick={handleSpeak}
                 className="p-3 rounded-full hover:bg-secondary transition-colors"
               >
                 <Volume2 className="w-6 h-6 text-primary" />
