@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Volume2, CheckCircle2, HelpCircle, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { speakText } from '@/lib/speech';
 
 interface SentenceCardProps {
   word: Word;
@@ -23,10 +24,7 @@ export function SentenceCard({ word, onAnswer }: SentenceCardProps) {
   );
 
   const speakSentence = () => {
-    const utterance = new SpeechSynthesisUtterance(word.example);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.8;
-    speechSynthesis.speak(utterance);
+    speakText(word.example);
   };
 
   const handleSubmit = () => {

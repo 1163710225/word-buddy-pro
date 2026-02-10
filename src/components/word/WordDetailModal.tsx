@@ -21,7 +21,8 @@
    BookOpen,
    Loader2 
  } from 'lucide-react';
- import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { speakWord as speak, speakText } from '@/lib/speech';
  
  interface Word {
    id: string;
@@ -53,19 +54,13 @@
    const { data: videos, isLoading: videosLoading } = useWordVideos(word?.id);
    const [isStarred, setIsStarred] = useState(word?.is_starred || false);
  
-   const speakWord = () => {
-     if (word) {
-       const utterance = new SpeechSynthesisUtterance(word.word);
-       utterance.lang = 'en-US';
-       speechSynthesis.speak(utterance);
-     }
-   };
- 
-   const speakText = (text: string) => {
-     const utterance = new SpeechSynthesisUtterance(text);
-     utterance.lang = 'en-US';
-     speechSynthesis.speak(utterance);
-   };
+    const handleSpeak = () => {
+      if (word) speak(word.word);
+    };
+
+    const handleSpeakText = (text: string) => {
+      speakText(text);
+    };
  
    const handleToggleStar = () => {
      if (word && onToggleStar) {
@@ -88,7 +83,7 @@
                <DialogTitle className="text-3xl font-bold">{word.word}</DialogTitle>
                <span className="text-lg text-muted-foreground">{word.phonetic}</span>
                <button
-                 onClick={speakWord}
+                 onClick={handleSpeak}
                  className="p-2 rounded-full hover:bg-secondary transition-colors"
                >
                  <Volume2 className="w-5 h-5 text-primary" />
@@ -151,7 +146,7 @@
                      <WordMeaningCard
                        key={meaning.id}
                        meaning={meaning}
-                       onPlayExample={speakText}
+                       onPlayExample={handleSpeakText}
                      />
                    ))}
                  </div>
@@ -164,7 +159,7 @@
                      <div className="border-t border-border pt-3">
                        <div className="flex items-start gap-2">
                          <button
-                           onClick={() => speakText(word.example!)}
+                           onClick={() => handleSpeakText(word.example!)}
                            className="p-1.5 rounded-full hover:bg-secondary transition-colors shrink-0"
                          >
                            <Volume2 className="w-4 h-4 text-primary" />
