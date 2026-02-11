@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Volume2, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { speakWord as speak } from '@/lib/speech';
 
 interface SpellingCardProps {
   word: Word;
@@ -35,9 +36,7 @@ export function SpellingCard({ word, onAnswer }: SpellingCardProps) {
   };
 
   const speakWord = () => {
-    const utterance = new SpeechSynthesisUtterance(word.word);
-    utterance.lang = 'en-US';
-    speechSynthesis.speak(utterance);
+    speak(word.word);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
