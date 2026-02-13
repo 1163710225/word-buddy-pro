@@ -9,8 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMenuSettings, useUpdateMenuSetting } from '@/hooks/useMenuSettings';
 import { useWordbooks, useCreateWordbook, useImportWords } from '@/hooks/useWordbooks';
-import { Settings, Upload, BookOpen, FileSpreadsheet, Download, Loader2 } from 'lucide-react';
+import { Settings, Upload, BookOpen, FileSpreadsheet, Download, Loader2, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import UserManagementTab from '@/components/admin/UserManagementTab';
 
 const Admin = () => {
   const { data: menuSettings, isLoading: menuLoading } = useMenuSettings();
@@ -115,7 +116,7 @@ accomplish\t/əˈkɑːmplɪʃ/\tv. 完成，实现\tShe accomplished her goal.\t
         </div>
 
         <Tabs defaultValue="menu" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-lg grid-cols-4">
             <TabsTrigger value="menu">
               <Settings className="w-4 h-4 mr-2" />
               菜单管理
@@ -127,6 +128,10 @@ accomplish\t/əˈkɑːmplɪʃ/\tv. 完成，实现\tShe accomplished her goal.\t
             <TabsTrigger value="import">
               <Upload className="w-4 h-4 mr-2" />
               导入单词
+            </TabsTrigger>
+            <TabsTrigger value="users">
+              <Users className="w-4 h-4 mr-2" />
+              用户管理
             </TabsTrigger>
           </TabsList>
 
@@ -317,6 +322,9 @@ example\t/ɪɡˈzɑːmpl/\tn. 例子\tThis is an example.\t这是一个例子。
                 </Button>
               </CardContent>
             </Card>
+          </TabsContent>
+          <TabsContent value="users">
+            <UserManagementTab />
           </TabsContent>
         </Tabs>
       </div>
