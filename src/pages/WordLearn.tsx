@@ -1,21 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { WordMeaningCard } from '@/components/word/WordMeaningCard';
 import { VideoExamplePlayer } from '@/components/word/VideoExamplePlayer';
 import { useWords, useToggleStarWord } from '@/hooks/useWordbooks';
 import { useWordMeanings, useWordVideos } from '@/hooks/useSmartStudy';
+import { useUpdateWordProgress } from '@/hooks/useUserStats';
 import { speakWord, speakText } from '@/lib/speech';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import {
   ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
   Volume2,
   Star,
   Flame,
@@ -23,20 +20,41 @@ import {
   Video,
   BookOpen,
   Loader2,
+  ThumbsUp,
+  ThumbsDown,
+  RotateCcw,
 } from 'lucide-react';
 
 const WordLearn = () => {
   const { id: wordbookId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const startIndex = parseInt(searchParams.get('start') || '0', 10);
+  const startIndex = parseInt(searchParams.get('start') || '-1', 10);
+  const isMobile = useIsMobile();
 
   const { data: words, isLoading } = useWords(wordbookId);
   const toggleStar = useToggleStarWord();
+  const updateProgress = useUpdateWordProgress();
 
-  const [currentIndex, setCurrentIndex] = useState(startIndex);
+  // Find first unlearned word (mastery < 80) as default start
+  const resumeIndex = useMemo(() => {
+    if (!words || words.length === 0) return 0;
+    if (startIndex >= 0) return startIndex;
+    const idx = words.findIndex((w: any) => (w.mastery || 0) < 80);
+    return idx >= 0 ? idx : 0;
+  }, [words, startIndex]);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answered, setAnswered] = useState(false);
+  const [showMeaning, setShowMeaning] = useState(false);
+
+  useEffect(() => {
+    if (words && words.length > 0) {
+      setCurrentIndex(resumeIndex);
+    }
+  }, [resumeIndex, words]);
+
   const currentWord = words?.[currentIndex];
-
   const { data: meanings, isLoading: meaningsLoading } = useWordMeanings(currentWord?.id);
   const { data: videos, isLoading: videosLoading } = useWordVideos(currentWord?.id);
 
@@ -44,6 +62,8 @@ const WordLearn = () => {
 
   useEffect(() => {
     setIsStarred((currentWord as any)?.is_starred || false);
+    setAnswered(false);
+    setShowMeaning(false);
   }, [currentWord]);
 
   const goNext = useCallback(() => {
@@ -61,12 +81,26 @@ const WordLearn = () => {
   // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goNext();
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goPrev();
+      if (e.key === 'ArrowRight') goNext();
+      if (e.key === 'ArrowLeft') goPrev();
+      if (e.key === ' ') {
+        e.preventDefault();
+        setShowMeaning(true);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [goNext, goPrev]);
+
+  const handleAnswer = (correct: boolean) => {
+    if (!currentWord || answered) return;
+    setAnswered(true);
+    updateProgress.mutate({ wordId: currentWord.id, correct });
+    // Auto advance after short delay
+    setTimeout(() => {
+      goNext();
+    }, 600);
+  };
 
   const handleToggleStar = () => {
     if (currentWord) {
@@ -79,29 +113,21 @@ const WordLearn = () => {
     if (currentWord) speakWord(currentWord.word);
   };
 
-  const handleSpeakText = (text: string) => {
-    speakText(text);
-  };
-
   if (isLoading) {
     return (
-      <AppLayout>
-        <div className="flex items-center justify-center h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </AppLayout>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   if (!words || words.length === 0) {
     return (
-      <AppLayout>
-        <div className="text-center py-16">
-          <BookOpen className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-          <p className="text-muted-foreground">该词库暂无单词</p>
-          <Button onClick={() => navigate(-1)} className="mt-4">返回</Button>
-        </div>
-      </AppLayout>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <BookOpen className="w-16 h-16 text-muted-foreground/30" />
+        <p className="text-muted-foreground">该词库暂无单词</p>
+        <Button onClick={() => navigate(-1)}>返回</Button>
+      </div>
     );
   }
 
@@ -110,176 +136,208 @@ const WordLearn = () => {
   const progress = ((currentIndex + 1) / words.length) * 100;
   const hasMultipleMeanings = meanings && meanings.length > 0;
   const hasVideos = videos && videos.length > 0;
+  const currentMastery = (currentWord as any).mastery || 0;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Bar */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border safe-area-top">
-        <div className="flex items-center gap-3 px-4 py-3 max-w-3xl mx-auto">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/wordbooks/${wordbookId}`)}>
+        <div className="flex items-center gap-3 px-4 py-2.5 max-w-6xl mx-auto">
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(`/wordbooks/${wordbookId}`)}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>{currentIndex + 1} / {words.length}</span>
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+              <span className="font-medium">{currentIndex + 1} / {words.length}</span>
+              <span>{Math.round(progress)}%</span>
             </div>
-            <Progress value={progress} className="h-1.5 mt-1" />
+            <Progress value={progress} className="h-1.5" />
           </div>
           <button
             onClick={handleToggleStar}
-            className="p-2 rounded-full hover:bg-secondary transition-colors"
+            className="p-2 rounded-full hover:bg-secondary transition-colors shrink-0"
           >
-            <Star
-              className={cn(
-                'w-5 h-5 transition-colors',
-                isStarred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
-              )}
-            />
+            <Star className={cn('w-5 h-5 transition-colors', isStarred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground')} />
           </button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <ScrollArea className="flex-1">
-        <div className="max-w-3xl mx-auto px-4 py-6 pb-32">
-          {/* Word Header */}
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground">{currentWord.word}</h1>
-              <button
-                onClick={handleSpeak}
-                className="p-2.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
-              >
-                <Volume2 className="w-5 h-5 text-primary" />
-              </button>
-            </div>
-            <p className="text-lg text-muted-foreground mb-3">{currentWord.phonetic}</p>
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto pb-28">
+        <div className="max-w-6xl mx-auto px-4 py-4 md:py-6">
+          {/* Word Header Card */}
+          <div className="bg-card rounded-2xl p-5 md:p-8 border border-border shadow-card mb-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <h1 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">{currentWord.word}</h1>
+                  <button
+                    onClick={handleSpeak}
+                    className="p-2.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                  >
+                    <Volume2 className="w-5 h-5 text-primary" />
+                  </button>
+                </div>
+                <p className="text-base md:text-lg text-muted-foreground mb-3">{currentWord.phonetic}</p>
+                <div className="flex flex-wrap gap-2">
+                  {currentWord.is_high_frequency && (
+                    <Badge className="bg-destructive text-destructive-foreground">
+                      <Flame className="w-3 h-3 mr-1" />高频词
+                    </Badge>
+                  )}
+                  {(currentWord.exam_priority ?? 0) > 80 && (
+                    <Badge className="bg-amber-500 text-white">
+                      <TrendingUp className="w-3 h-3 mr-1" />考试重点
+                    </Badge>
+                  )}
+                  <Badge variant="outline">词频 #{currentWord.frequency_rank || '-'}</Badge>
+                </div>
+              </div>
 
-            {/* Badges */}
-            <div className="flex flex-wrap gap-2">
-              {currentWord.is_high_frequency && (
-                <Badge className="bg-destructive text-destructive-foreground">
-                  <Flame className="w-3 h-3 mr-1" />
-                  高频词
-                </Badge>
+              {/* Mastery indicator */}
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                <div className="relative w-14 h-14 md:w-16 md:h-16">
+                  <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15" fill="none" strokeWidth="3" className="stroke-secondary" />
+                    <circle
+                      cx="18" cy="18" r="15" fill="none" strokeWidth="3" strokeLinecap="round"
+                      strokeDasharray={`${(currentMastery / 100) * 94.2} 94.2`}
+                      className={cn(
+                        currentMastery >= 80 ? 'stroke-green-500' :
+                        currentMastery >= 40 ? 'stroke-amber-500' : 'stroke-muted-foreground'
+                      )}
+                    />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-foreground">
+                    {currentMastery}%
+                  </span>
+                </div>
+                <span className="text-[10px] text-muted-foreground">
+                  {currentMastery >= 80 ? '已掌握' : currentMastery >= 40 ? '学习中' : '新词'}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick meaning preview (always visible) */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-base md:text-lg font-medium text-foreground">{currentWord.meaning}</p>
+              {currentWord.example && (
+                <div className="flex items-start gap-2 mt-2">
+                  <button
+                    onClick={() => speakText(currentWord.example!)}
+                    className="p-1 rounded-full hover:bg-secondary transition-colors shrink-0 mt-0.5"
+                  >
+                    <Volume2 className="w-3.5 h-3.5 text-primary" />
+                  </button>
+                  <div>
+                    <p className="text-sm text-muted-foreground italic">"{currentWord.example}"</p>
+                    {currentWord.example_translation && (
+                      <p className="text-xs text-muted-foreground/70 mt-0.5">{currentWord.example_translation}</p>
+                    )}
+                  </div>
+                </div>
               )}
-              {(currentWord.exam_priority ?? 0) > 80 && (
-                <Badge className="bg-amber-500 text-white">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  考试重点
-                </Badge>
-              )}
-              <Badge variant="outline">
-                词频排名 #{currentWord.frequency_rank || '-'}
-              </Badge>
             </div>
           </div>
 
-          {/* Tabs */}
-          <Tabs defaultValue="meanings">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="meanings" className="gap-2">
-                <BookOpen className="w-4 h-4" />
-                词义详解 {hasMultipleMeanings && `(${meanings.length})`}
-              </TabsTrigger>
-              <TabsTrigger value="videos" className="gap-2">
-                <Video className="w-4 h-4" />
-                视频例句 {hasVideos && `(${videos.length})`}
-              </TabsTrigger>
-            </TabsList>
+          {/* Detailed Content - Side by side on tablet/desktop */}
+          <div className={cn(
+            'grid gap-5',
+            !isMobile && (hasMultipleMeanings || hasVideos) ? 'md:grid-cols-2' : 'grid-cols-1'
+          )}>
+            {/* Meanings Column */}
+            {(meaningsLoading || hasMultipleMeanings) && (
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  词义详解 {hasMultipleMeanings && <span className="text-xs">({meanings.length})</span>}
+                </h3>
+                {meaningsLoading ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {meanings!.map((meaning) => (
+                      <WordMeaningCard key={meaning.id} meaning={meaning} onPlayExample={speakText} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-            <TabsContent value="meanings" className="mt-0">
-              {meaningsLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                </div>
-              ) : hasMultipleMeanings ? (
-                <div className="space-y-4">
-                  {meanings.map((meaning) => (
-                    <WordMeaningCard
-                      key={meaning.id}
-                      meaning={meaning}
-                      onPlayExample={handleSpeakText}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-card rounded-xl p-5 border border-border shadow-card">
-                  <p className="text-lg font-medium text-foreground mb-3">
-                    {currentWord.meaning}
-                  </p>
-                  {currentWord.example && (
-                    <div className="border-t border-border pt-3">
-                      <div className="flex items-start gap-2">
-                        <button
-                          onClick={() => handleSpeakText(currentWord.example!)}
-                          className="p-1.5 rounded-full hover:bg-secondary transition-colors shrink-0"
-                        >
-                          <Volume2 className="w-4 h-4 text-primary" />
-                        </button>
-                        <div>
-                          <p className="text-sm text-foreground italic">
-                            "{currentWord.example}"
-                          </p>
-                          {currentWord.example_translation && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {currentWord.example_translation}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </TabsContent>
+            {/* Videos Column */}
+            {(videosLoading || hasVideos) && (
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Video className="w-4 h-4" />
+                  视频例句 {hasVideos && <span className="text-xs">({videos.length})</span>}
+                </h3>
+                {videosLoading ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {videos!.map((video) => (
+                      <VideoExamplePlayer key={video.id} video={video} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
-            <TabsContent value="videos" className="mt-0">
-              {videosLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                </div>
-              ) : hasVideos ? (
-                <div className="space-y-4">
-                  {videos.map((video) => (
-                    <VideoExamplePlayer key={video.id} video={video} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Video className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-muted-foreground">暂无视频例句</p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+          {/* Empty state when no extra content */}
+          {!meaningsLoading && !videosLoading && !hasMultipleMeanings && !hasVideos && (
+            <div className="text-center py-8 text-muted-foreground/50">
+              <p className="text-sm">暂无详细词义和视频数据</p>
+            </div>
+          )}
         </div>
-      </ScrollArea>
+      </div>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border safe-area-bottom z-20">
-        <div className="flex items-center justify-between gap-4 px-4 py-3 max-w-3xl mx-auto">
+        <div className="flex items-center gap-3 px-4 py-3 max-w-6xl mx-auto">
           <Button
             variant="outline"
             size="lg"
-            onClick={goPrev}
-            disabled={currentIndex === 0}
-            className="flex-1"
+            onClick={() => handleAnswer(false)}
+            disabled={answered}
+            className={cn(
+              'flex-1 h-12 text-base font-medium transition-all',
+              answered && 'opacity-50'
+            )}
           >
-            <ChevronLeft className="w-5 h-5 mr-1" />
-            上一个
+            <ThumbsDown className="w-5 h-5 mr-2 text-destructive" />
+            不认识
           </Button>
-          <span className="text-sm text-muted-foreground font-medium whitespace-nowrap">
-            {currentIndex + 1} / {words.length}
-          </span>
+
+          <div className="flex flex-col items-center gap-0.5 shrink-0 min-w-[60px]">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goPrev}
+              disabled={currentIndex === 0}
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+            <span className="text-[10px] text-muted-foreground">{currentIndex + 1}/{words.length}</span>
+          </div>
+
           <Button
             size="lg"
-            onClick={goNext}
-            disabled={currentIndex === words.length - 1}
-            className="flex-1 gradient-primary"
+            onClick={() => handleAnswer(true)}
+            disabled={answered}
+            className={cn(
+              'flex-1 h-12 text-base font-medium gradient-primary transition-all',
+              answered && 'opacity-50'
+            )}
           >
-            下一个
-            <ChevronRight className="w-5 h-5 ml-1" />
+            <ThumbsUp className="w-5 h-5 mr-2" />
+            认识
           </Button>
         </div>
       </div>
