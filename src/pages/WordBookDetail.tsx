@@ -51,8 +51,8 @@ const WordBookDetail = () => {
   };
 
   const handleWordClick = (word: any) => {
-    setSelectedWord(word);
-    setShowWordDetail(true);
+    const wordIndex = wordbook?.words?.findIndex((w: any) => w.id === word.id) || 0;
+    navigate(`/wordbooks/${id}/learn?start=${wordIndex}`);
   };
 
   const getMasteryColor = (mastery: number) => {
@@ -188,7 +188,7 @@ const WordBookDetail = () => {
           <div className="flex gap-3 md:gap-4 mt-4 md:mt-6">
             <Button
               className="flex-1 gradient-primary shadow-primary text-sm md:text-base"
-              onClick={() => navigate('/study', { state: { wordbookId: id } })}
+              onClick={() => navigate(`/wordbooks/${id}/learn`)}
             >
               <Play className="w-4 h-4 mr-2" />
               开始学习
@@ -402,13 +402,7 @@ const WordBookDetail = () => {
           </Card>
         </div>
 
-        {/* Word Detail Modal */}
-        <WordDetailModal
-          word={selectedWord}
-          open={showWordDetail}
-          onOpenChange={setShowWordDetail}
-          onToggleStar={handleToggleStar}
-        />
+        {/* WordDetailModal removed - now using full page */}
       </div>
     </AppLayout>
   );

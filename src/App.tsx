@@ -18,6 +18,7 @@ import Games from "./pages/Games";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import WordLearn from "./pages/WordLearn";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/wordbooks" element={<ProtectedRoute><WordBooks /></ProtectedRoute>} />
             <Route path="/wordbooks/:id" element={<ProtectedRoute><WordBookDetail /></ProtectedRoute>} />
+            <Route path="/wordbooks/:id/learn" element={<ProtectedRoute><WordLearn /></ProtectedRoute>} />
             <Route path="/study" element={<ProtectedRoute><Study /></ProtectedRoute>} />
             <Route path="/review" element={<ProtectedRoute><Review /></ProtectedRoute>} />
             <Route path="/plan" element={<ProtectedRoute><Plan /></ProtectedRoute>} />
