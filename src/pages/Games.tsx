@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Gamepad2, Timer, Trophy, Zap, Target, Puzzle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Gamepad2, Timer, Trophy, Zap, Target, Puzzle, Loader2 } from 'lucide-react';
 import { WordMatchGame } from '@/components/games/WordMatchGame';
 import { SpeedChallengeGame } from '@/components/games/SpeedChallengeGame';
 import { WordPuzzleGame } from '@/components/games/WordPuzzleGame';
+import { useWordbooks, useWords } from '@/hooks/useWordbooks';
 
 type GameType = 'menu' | 'match' | 'speed' | 'puzzle';
 
@@ -18,10 +20,24 @@ const games = [
 const Games = () => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
   const [highScores, setHighScores] = useState({ match: 0, speed: 0, puzzle: 0 });
+  const [selectedWbId, setSelectedWbId] = useState('');
+
+  const { data: wordbooks, isLoading: wbLoading } = useWordbooks();
+  const { data: words } = useWords(selectedWbId || undefined);
 
   const handleGameComplete = (game: 'match' | 'speed' | 'puzzle', score: number) => {
     setHighScores(prev => ({ ...prev, [game]: Math.max(prev[game], score) }));
     setActiveGame('menu');
+  };
+
+  const handleStartGame = (gameId: string) => {
+    if (!selectedWbId) {
+      return;
+    }
+    if (!words || words.length < 4) {
+      return;
+    }
+    setActiveGame(gameId as GameType);
   };
 
   if (activeGame !== 'menu') {
@@ -31,6 +47,7 @@ const Games = () => {
         <GameComponent
           onComplete={(score: number) => handleGameComplete(activeGame as 'match' | 'speed' | 'puzzle', score)}
           onBack={() => setActiveGame('menu')}
+          words={words || []}
         />
       </AppLayout>
     );
@@ -47,17 +64,44 @@ const Games = () => {
           <p className="text-muted-foreground mt-1 text-xs md:text-base">趣味学习，轻松记忆</p>
         </div>
 
+        {/* Wordbook selector */}
+        <div className="mb-4 md:mb-6">
+          <label className="block text-sm font-medium mb-2">选择词库</label>
+          {wbLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              加载中...
+            </div>
+          ) : (
+            <Select value={selectedWbId} onValueChange={setSelectedWbId}>
+              <SelectTrigger className="w-full md:max-w-md">
+                <SelectValue placeholder="请选择词库开始游戏" />
+              </SelectTrigger>
+              <SelectContent>
+                {wordbooks?.map((wb) => (
+                  <SelectItem key={wb.id} value={wb.id}>
+                    {wb.icon} {wb.name} ({wb.word_count}词)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {!selectedWbId && (
+            <p className="text-amber-500 text-xs mt-2">请先选择词库</p>
+          )}
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-8">
           {[
-            { icon: Trophy, value: Object.values(highScores).reduce((a, b) => a + b, 0), label: '总积分', color: 'primary' },
-            { icon: Timer, value: 12, label: '今日游戏', color: 'success' },
-            { icon: Zap, value: '98%', label: '最高正确率', color: 'accent' },
+            { icon: Trophy, value: Object.values(highScores).reduce((a, b) => a + b, 0), label: '总积分' },
+            { icon: Timer, value: words?.length || 0, label: '可用单词' },
+            { icon: Zap, value: selectedWbId ? '✓' : '-', label: '词库状态' },
           ].map((s) => (
-            <Card key={s.label} className={`bg-gradient-to-br from-${s.color}/10 to-${s.color}/5 border-${s.color}/20`}>
+            <Card key={s.label} className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
               <CardContent className="pt-4 md:pt-6 text-center">
-                <s.icon className={`w-5 h-5 md:w-8 md:h-8 mx-auto text-${s.color} mb-1 md:mb-2`} />
-                <div className={`text-lg md:text-2xl font-bold text-${s.color}`}>{s.value}</div>
+                <s.icon className="w-5 h-5 md:w-8 md:h-8 mx-auto text-primary mb-1 md:mb-2" />
+                <div className="text-lg md:text-2xl font-bold text-primary">{s.value}</div>
                 <div className="text-[10px] md:text-sm text-muted-foreground">{s.label}</div>
               </CardContent>
             </Card>
@@ -69,9 +113,8 @@ const Games = () => {
           {games.map((game, i) => (
             <Card
               key={game.id}
-              className="group cursor-pointer hover:shadow-card-hover transition-all duration-300 active:scale-[0.98] md:hover:scale-[1.02] overflow-hidden animate-fade-in"
-              style={{ animationDelay: `${i * 0.1}s` }}
-              onClick={() => setActiveGame(game.id as GameType)}
+              className="group cursor-pointer hover:shadow-card-hover transition-all duration-300 active:scale-[0.98] md:hover:scale-[1.02] overflow-hidden"
+              onClick={() => handleStartGame(game.id)}
             >
               <div className={`h-1.5 md:h-2 bg-gradient-to-r ${game.color}`} />
               <CardHeader className="pb-2 md:pb-4">
