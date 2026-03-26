@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { WordMeaningCard } from '@/components/word/WordMeaningCard';
 import { VideoExamplePlayer } from '@/components/word/VideoExamplePlayer';
-import { useWords, useToggleStarWord } from '@/hooks/useWordbooks';
+import { useWordbookWithProgress, useToggleStarWord } from '@/hooks/useWordbooks';
 import { useWordMeanings, useWordVideos } from '@/hooks/useSmartStudy';
 import { useUpdateWordProgress } from '@/hooks/useUserStats';
 import { speakWord, speakText } from '@/lib/speech';
@@ -32,9 +32,22 @@ const WordLearn = () => {
   const startIndex = parseInt(searchParams.get('start') || '-1', 10);
   const isMobile = useIsMobile();
 
-  const { data: words, isLoading } = useWords(wordbookId);
+  const { data: wordbookData, isLoading } = useWordbookWithProgress(wordbookId);
   const toggleStar = useToggleStarWord();
   const updateProgress = useUpdateWordProgress();
+
+  // Sort words: unlearned (mastery < 80) first sorted by mastery asc, then learned
+  const words = useMemo(() => {
+    if (!wordbookData?.words) return [];
+    return [...wordbookData.words].sort((a, b) => {
+      const ma = a.mastery || 0;
+      const mb = b.mastery || 0;
+      const aLearned = ma >= 80;
+      const bLearned = mb >= 80;
+      if (aLearned !== bLearned) return aLearned ? 1 : -1;
+      return ma - mb;
+    });
+  }, [wordbookData?.words]);
 
   // Find first unlearned word (mastery < 80) as default start
   const resumeIndex = useMemo(() => {
