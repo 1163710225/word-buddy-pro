@@ -8,7 +8,15 @@ import { SpellingCard } from '@/components/study/SpellingCard';
 import { ListeningCard } from '@/components/study/ListeningCard';
 import { SentenceCard } from '@/components/study/SentenceCard';
 import { StudyProgress } from '@/components/study/StudyProgress';
-import { studyModes } from '@/data/mockData';
+
+const studyModes = [
+  { id: 'word-meaning', name: '看词选义', description: '看英文单词，选择正确的中文释义', icon: '👀', color: 'primary' },
+  { id: 'meaning-word', name: '看义选词', description: '看中文释义，选择正确的英文单词', icon: '🔤', color: 'accent' },
+  { id: 'spelling', name: '拼写练习', description: '根据中文释义，拼写出正确的英文单词', icon: '✍️', color: 'success' },
+  { id: 'listening', name: '听音选词', description: '听单词发音，选择正确的单词', icon: '🎧', color: 'warning' },
+  { id: 'sentence', name: '例句填空', description: '根据例句语境，填入正确的单词', icon: '📝', color: 'primary' },
+  { id: 'flashcard', name: '闪卡记忆', description: '经典翻卡模式，快速记忆单词', icon: '🃏', color: 'accent' },
+];
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, X, Loader2 } from 'lucide-react';
