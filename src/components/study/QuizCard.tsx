@@ -38,7 +38,7 @@ export function QuizCard({ word, options, mode, onAnswer }: QuizCardProps) {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto animate-fade-in">
+    <div className="w-full max-w-3xl mx-auto">
       <div className="bg-card rounded-3xl shadow-card p-8">
         {/* Question */}
         <div className="text-center mb-8">

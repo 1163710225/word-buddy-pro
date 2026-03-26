@@ -95,20 +95,15 @@ export function Sidebar() {
               key={menu.id}
               to={path}
               className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
+                'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 min-h-[48px]',
                 isActive
                   ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-primary'
                   : 'hover:bg-sidebar-accent text-sidebar-foreground/80 hover:text-sidebar-foreground'
               )}
             >
-              <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'animate-bounce-soft')} />
+              <Icon className="w-5 h-5 flex-shrink-0" />
               {!collapsed && (
-                <div className="animate-fade-in">
-                  <span className="font-medium">{menu.menu_name}</span>
-                  {isActive && (
-                    <p className="text-xs opacity-80">{descriptionMap[menu.menu_key]}</p>
-                  )}
-                </div>
+                <span className="font-medium">{menu.menu_name}</span>
               )}
             </Link>
           );
