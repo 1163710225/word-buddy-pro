@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { WordMeaningCard } from '@/components/word/WordMeaningCard';
 import { VideoExamplePlayer } from '@/components/word/VideoExamplePlayer';
-import { useWords, useToggleStarWord } from '@/hooks/useWordbooks';
+import { useWordbookWithProgress, useToggleStarWord } from '@/hooks/useWordbooks';
 import { useWordMeanings, useWordVideos } from '@/hooks/useSmartStudy';
 import { useUpdateWordProgress } from '@/hooks/useUserStats';
 import { speakWord, speakText } from '@/lib/speech';
