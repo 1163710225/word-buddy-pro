@@ -60,12 +60,14 @@ const WordLearn = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [showMeaning, setShowMeaning] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    if (words && words.length > 0) {
+    if (!initialized && words && words.length > 0) {
       setCurrentIndex(resumeIndex);
+      setInitialized(true);
     }
-  }, [resumeIndex, words]);
+  }, [resumeIndex, words, initialized]);
 
   const currentWord = words?.[currentIndex];
   const { data: meanings, isLoading: meaningsLoading } = useWordMeanings(currentWord?.id);
