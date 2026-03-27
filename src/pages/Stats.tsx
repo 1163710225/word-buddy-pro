@@ -58,12 +58,16 @@ const Stats = () => {
         {/* Overview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-8">
           {[
-            { value: d.totalWords, label: '累计学习', cls: 'text-gradient-primary' },
-            { value: d.masteredWords, label: '已掌握', cls: 'text-success' },
-            { value: d.streak, label: '连续打卡', cls: 'text-warning' },
-            { value: d.totalStudyDays, label: '总天数', cls: 'text-primary' },
+            { value: d.totalWords, label: '累计学习', cls: 'text-gradient-primary', link: '/stats/history?type=all' },
+            { value: d.masteredWords, label: '已掌握', cls: 'text-success', link: '/stats/history?type=mastered' },
+            { value: d.streak, label: '连续打卡', cls: 'text-warning', link: '' },
+            { value: d.totalStudyDays, label: '总天数', cls: 'text-primary', link: '' },
           ].map((s) => (
-            <div key={s.label} className="bg-card rounded-xl md:rounded-2xl p-3 md:p-6 shadow-card text-center">
+            <div
+              key={s.label}
+              className={`bg-card rounded-xl md:rounded-2xl p-3 md:p-6 shadow-card text-center ${s.link ? 'cursor-pointer hover:shadow-card-hover active:scale-[0.97] transition-all' : ''}`}
+              onClick={() => s.link && navigate(s.link)}
+            >
               <p className={`text-2xl md:text-4xl font-bold ${s.cls}`}>{s.value}</p>
               <p className="text-muted-foreground text-xs md:text-sm mt-1">{s.label}</p>
             </div>
