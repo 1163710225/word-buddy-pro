@@ -23,6 +23,7 @@ export function StatsCard({
   trend,
   variant = 'default',
   className,
+  onClick,
 }: StatsCardProps) {
   const variantStyles = {
     default: 'bg-card',
