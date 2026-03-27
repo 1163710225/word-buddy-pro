@@ -19,6 +19,7 @@ import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import WordLearn from "./pages/WordLearn";
+import WordHistory from "./pages/WordHistory";
 
 const queryClient = new QueryClient({
   defaultOptions: {
