@@ -36,9 +36,11 @@ export function StatsCard({
 
   return (
     <div
+      onClick={onClick}
       className={cn(
         'rounded-xl md:rounded-2xl p-4 md:p-6 shadow-card hover:shadow-card-hover transition-all duration-300 animate-fade-in',
         variantStyles[variant],
+        onClick && 'cursor-pointer active:scale-[0.97]',
         className
       )}
     >
