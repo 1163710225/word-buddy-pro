@@ -12,6 +12,7 @@ interface StatsCardProps {
   };
   variant?: 'default' | 'primary' | 'accent' | 'success';
   className?: string;
+  onClick?: () => void;
 }
 
 export function StatsCard({
