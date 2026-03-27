@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useUserStats } from '@/hooks/useUserStats';
 import { WeeklyChart } from '@/components/dashboard/WeeklyChart';
