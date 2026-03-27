@@ -56,6 +56,7 @@ const Index = () => {
             subtitle="个单词"
             icon={<BookOpen className="w-5 h-5 md:w-6 md:h-6" />}
             variant="primary"
+            onClick={() => navigate('/stats')}
           />
           <StatsCard
             title="已掌握"
@@ -63,6 +64,7 @@ const Index = () => {
             subtitle="个单词"
             icon={<Trophy className="w-5 h-5 md:w-6 md:h-6" />}
             variant="success"
+            onClick={() => navigate('/stats')}
           />
           <StatsCard
             title="学习中"
@@ -70,6 +72,7 @@ const Index = () => {
             subtitle="个单词"
             icon={<Brain className="w-5 h-5 md:w-6 md:h-6" />}
             trend={{ value: 12, isPositive: true }}
+            onClick={() => navigate('/wordbooks')}
           />
           <StatsCard
             title="连续打卡"
@@ -77,6 +80,7 @@ const Index = () => {
             subtitle="天"
             icon={<Flame className="w-5 h-5 md:w-6 md:h-6" />}
             variant="accent"
+            onClick={() => navigate('/stats')}
           />
         </div>
 
