@@ -32,10 +32,18 @@ const WordLearn = () => {
   const [searchParams] = useSearchParams();
   const startIndex = parseInt(searchParams.get('start') || '-1', 10);
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
   const { data: wordbookData, isLoading } = useWordbookWithProgress(wordbookId);
   const toggleStar = useToggleStarWord();
   const updateProgress = useUpdateWordProgress();
+
+  // Invalidate wordbook cache when leaving so next visit gets fresh data
+  useEffect(() => {
+    return () => {
+      queryClient.invalidateQueries({ queryKey: ['wordbook'] });
+    };
+  }, [queryClient]);
 
   // Sort words once on initial load, then freeze the order for the session
   const [frozenWords, setFrozenWords] = useState<any[] | null>(null);
