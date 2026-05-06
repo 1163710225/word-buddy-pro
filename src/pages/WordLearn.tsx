@@ -36,18 +36,24 @@ const WordLearn = () => {
   const toggleStar = useToggleStarWord();
   const updateProgress = useUpdateWordProgress();
 
-  // Sort words: unlearned (mastery < 80) first sorted by mastery asc, then learned
-  const words = useMemo(() => {
-    if (!wordbookData?.words) return [];
-    return [...wordbookData.words].sort((a, b) => {
-      const ma = a.mastery || 0;
-      const mb = b.mastery || 0;
-      const aLearned = ma >= 80;
-      const bLearned = mb >= 80;
-      if (aLearned !== bLearned) return aLearned ? 1 : -1;
-      return ma - mb;
-    });
-  }, [wordbookData?.words]);
+  // Sort words once on initial load, then freeze the order for the session
+  const [frozenWords, setFrozenWords] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    if (!frozenWords && wordbookData?.words && wordbookData.words.length > 0) {
+      const sorted = [...wordbookData.words].sort((a, b) => {
+        const ma = a.mastery || 0;
+        const mb = b.mastery || 0;
+        const aLearned = ma >= 80;
+        const bLearned = mb >= 80;
+        if (aLearned !== bLearned) return aLearned ? 1 : -1;
+        return ma - mb;
+      });
+      setFrozenWords(sorted);
+    }
+  }, [wordbookData?.words, frozenWords]);
+
+  const words = frozenWords || [];
 
   // Find first unlearned word (mastery < 80) as default start
   const resumeIndex = useMemo(() => {
