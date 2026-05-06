@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,31 +32,45 @@ const WordLearn = () => {
   const [searchParams] = useSearchParams();
   const startIndex = parseInt(searchParams.get('start') || '-1', 10);
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
   const { data: wordbookData, isLoading } = useWordbookWithProgress(wordbookId);
   const toggleStar = useToggleStarWord();
   const updateProgress = useUpdateWordProgress();
 
-  // Sort words: unlearned (mastery < 80) first sorted by mastery asc, then learned
-  const words = useMemo(() => {
-    if (!wordbookData?.words) return [];
-    return [...wordbookData.words].sort((a, b) => {
-      const ma = a.mastery || 0;
-      const mb = b.mastery || 0;
-      const aLearned = ma >= 80;
-      const bLearned = mb >= 80;
-      if (aLearned !== bLearned) return aLearned ? 1 : -1;
-      return ma - mb;
-    });
-  }, [wordbookData?.words]);
+  // Invalidate wordbook cache when leaving so next visit gets fresh data
+  useEffect(() => {
+    return () => {
+      queryClient.invalidateQueries({ queryKey: ['wordbook'] });
+    };
+  }, [queryClient]);
+
+  // Sort words once on initial load, then freeze the order for the session
+  const [frozenWords, setFrozenWords] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    if (!frozenWords && wordbookData?.words && wordbookData.words.length > 0) {
+      const sorted = [...wordbookData.words].sort((a, b) => {
+        const ma = a.mastery || 0;
+        const mb = b.mastery || 0;
+        const aLearned = ma >= 80;
+        const bLearned = mb >= 80;
+        if (aLearned !== bLearned) return aLearned ? 1 : -1;
+        return ma - mb;
+      });
+      setFrozenWords(sorted);
+    }
+  }, [wordbookData?.words, frozenWords]);
+
+  const words = frozenWords || [];
 
   // Find first unlearned word (mastery < 80) as default start
-  const resumeIndex = useMemo(() => {
+  const resumeIndex = (() => {
     if (!words || words.length === 0) return 0;
     if (startIndex >= 0) return startIndex;
     const idx = words.findIndex((w: any) => (w.mastery || 0) < 80);
     return idx >= 0 ? idx : 0;
-  }, [words, startIndex]);
+  })();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answered, setAnswered] = useState(false);
@@ -115,10 +130,10 @@ const WordLearn = () => {
     if (!currentWord || answered) return;
     setAnswered(true);
     updateProgress.mutate({ wordId: currentWord.id, correct });
-    // Auto advance after short delay
+    // Auto advance after delay - goNext will trigger word change & speak
     setTimeout(() => {
       goNext();
-    }, 600);
+    }, 800);
   };
 
   const handleToggleStar = () => {

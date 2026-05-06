@@ -226,7 +226,8 @@ export function useUpdateWordProgress() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userStats'] });
-      queryClient.invalidateQueries({ queryKey: ['wordbook'] });
+      // Don't invalidate wordbook here - it causes re-sort during learning session
+      // The wordbook query will naturally refetch when user navigates back
     },
   });
 }
