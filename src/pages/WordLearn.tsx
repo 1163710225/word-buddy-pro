@@ -57,12 +57,12 @@ const WordLearn = () => {
   const words = frozenWords || [];
 
   // Find first unlearned word (mastery < 80) as default start
-  const resumeIndex = useMemo(() => {
+  const resumeIndex = (() => {
     if (!words || words.length === 0) return 0;
     if (startIndex >= 0) return startIndex;
     const idx = words.findIndex((w: any) => (w.mastery || 0) < 80);
     return idx >= 0 ? idx : 0;
-  }, [words, startIndex]);
+  })();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answered, setAnswered] = useState(false);
