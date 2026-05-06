@@ -121,10 +121,10 @@ const WordLearn = () => {
     if (!currentWord || answered) return;
     setAnswered(true);
     updateProgress.mutate({ wordId: currentWord.id, correct });
-    // Auto advance after short delay
+    // Auto advance after delay - goNext will trigger word change & speak
     setTimeout(() => {
       goNext();
-    }, 600);
+    }, 800);
   };
 
   const handleToggleStar = () => {
