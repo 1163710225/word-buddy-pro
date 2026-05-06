@@ -79,6 +79,10 @@ const WordLearn = () => {
     setIsStarred((currentWord as any)?.is_starred || false);
     setAnswered(false);
     setShowMeaning(false);
+    // Auto-read the word aloud when it changes
+    if (currentWord?.word) {
+      speakWord(currentWord.word);
+    }
   }, [currentWord]);
 
   const goNext = useCallback(() => {
