@@ -79,6 +79,10 @@ const WordLearn = () => {
     setIsStarred((currentWord as any)?.is_starred || false);
     setAnswered(false);
     setShowMeaning(false);
+    // Auto-read the word aloud when it changes
+    if (currentWord?.word) {
+      speakWord(currentWord.word);
+    }
   }, [currentWord]);
 
   const goNext = useCallback(() => {
@@ -158,7 +162,7 @@ const WordLearn = () => {
       {/* Top Bar */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border safe-area-top">
         <div className="flex items-center gap-3 px-4 py-2.5 max-w-6xl mx-auto">
-          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(`/wordbooks/${wordbookId}`)}>
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1 min-w-0">

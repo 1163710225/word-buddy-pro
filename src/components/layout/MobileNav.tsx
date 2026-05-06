@@ -42,10 +42,9 @@ export function MobileNav() {
   // Default fallback menus to prevent flash while loading
   const defaultMenus = [
     { id: 'home', menu_key: 'home', menu_name: '首页', is_visible: true },
-    { id: 'wordbooks', menu_key: 'wordbooks', menu_name: '词库', is_visible: true },
-    { id: 'study', menu_key: 'study', menu_name: '学习', is_visible: true },
     { id: 'review', menu_key: 'review', menu_name: '复习', is_visible: true },
-    { id: 'games', menu_key: 'games', menu_name: '小游戏', is_visible: true },
+    { id: 'stats', menu_key: 'stats', menu_name: '统计', is_visible: true },
+    { id: 'wordbooks', menu_key: 'wordbooks', menu_name: '词库', is_visible: true },
   ];
   const visibleMenus = (menuSettings?.filter(m => m.is_visible).slice(0, 5) || (isLoading ? defaultMenus : []));
 
