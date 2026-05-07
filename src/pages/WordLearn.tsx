@@ -131,6 +131,13 @@ const WordLearn = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (words.length === 0) return;
+    if (currentIndex > words.length - 1) {
+      setCurrentIndex(Math.max(0, words.length - 1));
+    }
+  }, [words.length, currentIndex]);
+
   const goNext = useCallback(() => {
     if (words && currentIndex < words.length - 1) {
       setCurrentIndex(i => i + 1);
@@ -187,13 +194,8 @@ const WordLearn = () => {
           }
 
           advanceTimerRef.current = window.setTimeout(() => {
-            setCurrentIndex((prevIndex) => {
-              if (mode === 'review') return prevIndex;
-              return prevIndex < words.length - 1 ? prevIndex + 1 : prevIndex;
-            });
-
-            if (mode === 'review') {
-              setCurrentIndex((prevIndex) => Math.max(0, Math.min(prevIndex, (frozenWords?.length || 1) - 2)));
+            if (mode === 'learn') {
+              setCurrentIndex((prevIndex) => (prevIndex < words.length - 1 ? prevIndex + 1 : prevIndex));
             }
           }, correct ? 500 : 700);
         },
