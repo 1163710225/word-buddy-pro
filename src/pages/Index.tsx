@@ -105,6 +105,15 @@ const Index = () => {
     }
   };
 
+  const handleStartReview = () => {
+    if (selectedWordbookId && (reviewCount || 0) > 0) {
+      navigate(`/wordbooks/${selectedWordbookId}/learn?mode=review`);
+      return;
+    }
+
+    navigate('/review');
+  };
+
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto px-1">
@@ -177,7 +186,7 @@ const Index = () => {
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <button
-            onClick={() => navigate('/review')}
+            onClick={handleStartReview}
             className="bg-card rounded-xl p-4 border border-border text-left hover:bg-secondary/30 transition-colors"
           >
             <div className="flex items-center justify-between">
