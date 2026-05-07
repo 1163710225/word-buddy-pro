@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { useUpdateWordProgress } from '@/hooks/useUserStats';
 import { speakWord, speakText } from '@/lib/speech';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { buildSessionQueue, getResumeIndex, getSessionCopy, type SessionMode } from '@/lib/study-session';
 import {
   ArrowLeft,
   Volume2,
@@ -24,6 +25,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   RotateCcw,
+  CheckCircle2,
+  CalendarClock,
 } from 'lucide-react';
 
 const WordLearn = () => {
@@ -31,8 +34,10 @@ const WordLearn = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const startIndex = parseInt(searchParams.get('start') || '-1', 10);
+  const mode = (searchParams.get('mode') === 'review' ? 'review' : 'learn') as SessionMode;
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const sessionCopy = getSessionCopy(mode);
 
   const { data: wordbookData, isLoading } = useWordbookWithProgress(wordbookId);
   const toggleStar = useToggleStarWord();
@@ -45,37 +50,38 @@ const WordLearn = () => {
     };
   }, [queryClient]);
 
+  const sessionWords = useMemo(() => {
+    return buildSessionQueue((wordbookData?.words || []) as any[], mode);
+  }, [wordbookData?.words, mode]);
+
   // Sort words once on initial load, then freeze the order for the session
   const [frozenWords, setFrozenWords] = useState<any[] | null>(null);
 
   useEffect(() => {
-    if (!frozenWords && wordbookData?.words && wordbookData.words.length > 0) {
-      const sorted = [...wordbookData.words].sort((a, b) => {
-        const ma = a.mastery || 0;
-        const mb = b.mastery || 0;
-        const aLearned = ma >= 80;
-        const bLearned = mb >= 80;
-        if (aLearned !== bLearned) return aLearned ? 1 : -1;
-        return ma - mb;
-      });
-      setFrozenWords(sorted);
+    if (!frozenWords && sessionWords.length > 0) {
+      setFrozenWords(sessionWords);
     }
-  }, [wordbookData?.words, frozenWords]);
+  }, [sessionWords, frozenWords]);
+
+  useEffect(() => {
+    setFrozenWords(null);
+    setInitialized(false);
+  }, [wordbookId, mode]);
 
   const words = frozenWords || [];
 
-  // Find first unlearned word (mastery < 80) as default start
-  const resumeIndex = (() => {
+  const resumeIndex = useMemo(() => {
     if (!words || words.length === 0) return 0;
-    if (startIndex >= 0) return startIndex;
-    const idx = words.findIndex((w: any) => (w.mastery || 0) < 80);
-    return idx >= 0 ? idx : 0;
-  })();
+    if (startIndex >= 0 && mode === 'learn') return Math.min(startIndex, words.length - 1);
+    return getResumeIndex(words as any[], mode);
+  }, [words, startIndex, mode]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answered, setAnswered] = useState(false);
-  const [showMeaning, setShowMeaning] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [isAutoSpeaking, setIsAutoSpeaking] = useState(false);
+  const currentSpeakToken = useRef(0);
+  const advanceTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!initialized && words && words.length > 0) {
@@ -93,12 +99,37 @@ const WordLearn = () => {
   useEffect(() => {
     setIsStarred((currentWord as any)?.is_starred || false);
     setAnswered(false);
-    setShowMeaning(false);
-    // Auto-read the word aloud when it changes
-    if (currentWord?.word) {
-      speakWord(currentWord.word);
-    }
+    if (!currentWord?.word) return;
+
+    const token = Date.now();
+    currentSpeakToken.current = token;
+
+    const autoSpeak = async () => {
+      setIsAutoSpeaking(true);
+      await speakWord(currentWord.word);
+      if (currentWord.example && currentSpeakToken.current === token) {
+        await speakText(currentWord.example);
+      }
+      if (currentSpeakToken.current === token) {
+        setIsAutoSpeaking(false);
+      }
+    };
+
+    void autoSpeak();
+
+    return () => {
+      currentSpeakToken.current = token + 1;
+      setIsAutoSpeaking(false);
+    };
   }, [currentWord]);
+
+  useEffect(() => {
+    return () => {
+      if (advanceTimerRef.current) {
+        window.clearTimeout(advanceTimerRef.current);
+      }
+    };
+  }, []);
 
   const goNext = useCallback(() => {
     if (words && currentIndex < words.length - 1) {
@@ -119,21 +150,55 @@ const WordLearn = () => {
       if (e.key === 'ArrowLeft') goPrev();
       if (e.key === ' ') {
         e.preventDefault();
-        setShowMeaning(true);
+        if (currentWord?.word) {
+          void speakWord(currentWord.word);
+        }
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [goNext, goPrev]);
+  }, [goNext, goPrev, currentWord?.word]);
 
   const handleAnswer = (correct: boolean) => {
     if (!currentWord || answered) return;
     setAnswered(true);
-    updateProgress.mutate({ wordId: currentWord.id, correct });
-    // Auto advance after delay - goNext will trigger word change & speak
-    setTimeout(() => {
-      goNext();
-    }, 800);
+    updateProgress.mutate(
+      { wordId: currentWord.id, correct, mode },
+      {
+        onSuccess: (updated) => {
+          setFrozenWords((prev) => {
+            if (!prev) return prev;
+
+            const nextWords = prev.map((word) =>
+              word.id === currentWord.id
+                ? { ...word, ...updated }
+                : word
+            );
+
+            if (mode === 'review') {
+              return nextWords.filter((word) => word.id !== currentWord.id || (word.mastery || 0) < 80);
+            }
+
+            return nextWords;
+          });
+
+          if (advanceTimerRef.current) {
+            window.clearTimeout(advanceTimerRef.current);
+          }
+
+          advanceTimerRef.current = window.setTimeout(() => {
+            setCurrentIndex((prevIndex) => {
+              if (mode === 'review') return prevIndex;
+              return prevIndex < words.length - 1 ? prevIndex + 1 : prevIndex;
+            });
+
+            if (mode === 'review') {
+              setCurrentIndex((prevIndex) => Math.max(0, Math.min(prevIndex, (frozenWords?.length || 1) - 2)));
+            }
+          }, correct ? 500 : 700);
+        },
+      }
+    );
   };
 
   const handleToggleStar = () => {
@@ -144,7 +209,13 @@ const WordLearn = () => {
   };
 
   const handleSpeak = () => {
-    if (currentWord) speakWord(currentWord.word);
+    if (currentWord) {
+      void speakWord(currentWord.word).then(() => {
+        if (currentWord.example) {
+          return speakText(currentWord.example);
+        }
+      });
+    }
   };
 
   if (isLoading) {
@@ -159,18 +230,27 @@ const WordLearn = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
         <BookOpen className="w-16 h-16 text-muted-foreground/30" />
-        <p className="text-muted-foreground">该词库暂无单词</p>
-        <Button onClick={() => navigate(-1)}>返回</Button>
+        <div className="text-center space-y-1 px-6">
+          <p className="text-foreground font-medium">{sessionCopy.emptyTitle}</p>
+          <p className="text-sm text-muted-foreground">{sessionCopy.emptyDescription}</p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate('/review')}>去复习中心</Button>
+          <Button onClick={() => navigate('/')}>返回首页</Button>
+        </div>
       </div>
     );
   }
 
   if (!currentWord) return null;
 
-  const progress = ((currentIndex + 1) / words.length) * 100;
+  const progress = words.length > 0 ? ((currentIndex + 1) / words.length) * 100 : 0;
   const hasMultipleMeanings = meanings && meanings.length > 0;
   const hasVideos = videos && videos.length > 0;
   const currentMastery = (currentWord as any).mastery || 0;
+  const nextReviewLabel = (currentWord as any).next_review
+    ? new Date((currentWord as any).next_review).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : null;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -203,7 +283,7 @@ const WordLearn = () => {
           <div className="bg-card rounded-2xl p-5 md:p-8 border border-border shadow-card mb-5">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-1">
+                <div className="flex items-center gap-3 mb-1 flex-wrap">
                   <h1 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">{currentWord.word}</h1>
                   <button
                     onClick={handleSpeak}
@@ -211,6 +291,12 @@ const WordLearn = () => {
                   >
                     <Volume2 className="w-5 h-5 text-primary" />
                   </button>
+                  {isAutoSpeaking && (
+                    <Badge variant="outline" className="gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      正在朗读
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-base md:text-lg text-muted-foreground mb-3">{currentWord.phonetic}</p>
                 <div className="flex flex-wrap gap-2">
@@ -224,6 +310,10 @@ const WordLearn = () => {
                       <TrendingUp className="w-3 h-3 mr-1" />考试重点
                     </Badge>
                   )}
+                  <Badge variant="outline" className="gap-1">
+                    {mode === 'review' ? <CalendarClock className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
+                    {mode === 'review' ? '复习模式' : '学习模式'}
+                  </Badge>
                   <Badge variant="outline">词频 #{currentWord.frequency_rank || '-'}</Badge>
                 </div>
               </div>
@@ -254,7 +344,18 @@ const WordLearn = () => {
 
             {/* Quick meaning preview (always visible) */}
             <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-base md:text-lg font-medium text-foreground">{currentWord.meaning}</p>
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">核心释义</p>
+                  <p className="text-base md:text-lg font-medium text-foreground">{currentWord.meaning}</p>
+                </div>
+                {nextReviewLabel && mode === 'review' && (
+                  <div className="text-right shrink-0">
+                    <p className="text-xs text-muted-foreground">下次复习</p>
+                    <p className="text-xs font-medium text-foreground">{nextReviewLabel}</p>
+                  </div>
+                )}
+              </div>
               {currentWord.example && (
                 <div className="flex items-start gap-2 mt-2">
                   <button
@@ -264,7 +365,7 @@ const WordLearn = () => {
                     <Volume2 className="w-3.5 h-3.5 text-primary" />
                   </button>
                   <div>
-                    <p className="text-sm text-muted-foreground italic">"{currentWord.example}"</p>
+                     <p className="text-sm text-muted-foreground italic">"{currentWord.example}"</p>
                     {currentWord.example_translation && (
                       <p className="text-xs text-muted-foreground/70 mt-0.5">{currentWord.example_translation}</p>
                     )}
@@ -345,7 +446,7 @@ const WordLearn = () => {
             )}
           >
             <ThumbsDown className="w-5 h-5 mr-2 text-destructive" />
-            不认识
+              {sessionCopy.secondaryAction}
           </Button>
 
           <div className="flex flex-col items-center gap-0.5 shrink-0 min-w-[60px]">
@@ -371,7 +472,7 @@ const WordLearn = () => {
             )}
           >
             <ThumbsUp className="w-5 h-5 mr-2" />
-            认识
+              {sessionCopy.primaryAction}
           </Button>
         </div>
       </div>
