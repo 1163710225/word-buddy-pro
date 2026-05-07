@@ -182,7 +182,7 @@ export function useUpdateWordProgress() {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async ({ wordId, correct }: { wordId: string; correct: boolean }) => {
+    mutationFn: async ({ wordId, correct, mode = 'learn' }: { wordId: string; correct: boolean; mode?: 'learn' | 'review' }) => {
       if (!user) throw new Error('User not logged in');
       
       // Get existing progress
@@ -194,40 +194,76 @@ export function useUpdateWordProgress() {
         .maybeSingle();
 
       const now = new Date().toISOString();
-      const masteryChange = correct ? 20 : -10;
+      const currentMastery = existing?.mastery || 0;
+      const currentReviewCount = existing?.review_count || 0;
+      const currentCorrectCount = existing?.correct_count || 0;
+
+      const masteryChange = mode === 'review'
+        ? (correct ? 15 : -15)
+        : (correct ? (currentReviewCount === 0 ? 40 : 20) : -10);
+
+      const newMastery = Math.max(0, Math.min(100, currentMastery + masteryChange));
+
+      const reviewIntervalsHours = [8, 24, 72, 168, 360, 720];
+      const fallbackIndex = Math.min(Math.floor(newMastery / 20), reviewIntervalsHours.length - 1);
+      const intervalIndex = correct
+        ? Math.min(Math.max(currentCorrectCount, 0), reviewIntervalsHours.length - 1)
+        : 0;
+      const nextReviewDate = new Date();
+      nextReviewDate.setHours(nextReviewDate.getHours() + reviewIntervalsHours[correct ? intervalIndex : fallbackIndex]);
 
       if (existing) {
-        const newMastery = Math.max(0, Math.min(100, (existing.mastery || 0) + masteryChange));
         const { error } = await supabase
           .from('user_word_progress')
           .update({
             mastery: newMastery,
-            review_count: (existing.review_count || 0) + 1,
-            correct_count: (existing.correct_count || 0) + (correct ? 1 : 0),
+            review_count: currentReviewCount + 1,
+            correct_count: currentCorrectCount + (correct ? 1 : 0),
             last_reviewed: now,
+            next_review: nextReviewDate.toISOString(),
           })
           .eq('id', existing.id);
         
         if (error) throw error;
+
+        return {
+          wordId,
+          mastery: newMastery,
+          review_count: currentReviewCount + 1,
+          correct_count: currentCorrectCount + (correct ? 1 : 0),
+          last_reviewed: now,
+          next_review: nextReviewDate.toISOString(),
+        };
       } else {
         const { error } = await supabase
           .from('user_word_progress')
           .insert({
             user_id: user.id,
             word_id: wordId,
-            mastery: correct ? 20 : 0,
+            mastery: newMastery,
             review_count: 1,
             correct_count: correct ? 1 : 0,
             last_reviewed: now,
+            next_review: nextReviewDate.toISOString(),
           });
         
         if (error) throw error;
+
+        return {
+          wordId,
+          mastery: newMastery,
+          review_count: 1,
+          correct_count: correct ? 1 : 0,
+          last_reviewed: now,
+          next_review: nextReviewDate.toISOString(),
+        };
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userStats'] });
-      // Don't invalidate wordbook here - it causes re-sort during learning session
-      // The wordbook query will naturally refetch when user navigates back
+      queryClient.invalidateQueries({ queryKey: ['review-words'] });
+      queryClient.invalidateQueries({ queryKey: ['wordbookProgress'] });
+      queryClient.invalidateQueries({ queryKey: ['reviewCount'] });
     },
   });
 }

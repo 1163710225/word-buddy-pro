@@ -52,7 +52,7 @@ const WordBookDetail = () => {
 
   const handleWordClick = (word: any) => {
     const wordIndex = wordbook?.words?.findIndex((w: any) => w.id === word.id) || 0;
-    navigate(`/wordbooks/${id}/learn?start=${wordIndex}`);
+    navigate(`/wordbooks/${id}/learn?start=${wordIndex}&mode=learn`);
   };
 
   const getMasteryColor = (mastery: number) => {
@@ -188,7 +188,7 @@ const WordBookDetail = () => {
           <div className="flex gap-3 md:gap-4 mt-4 md:mt-6">
             <Button
               className="flex-1 gradient-primary shadow-primary text-sm md:text-base"
-              onClick={() => navigate(`/wordbooks/${id}/learn`)}
+              onClick={() => navigate(`/wordbooks/${id}/learn?mode=learn`)}
             >
               <Play className="w-4 h-4 mr-2" />
               开始学习

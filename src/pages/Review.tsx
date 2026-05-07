@@ -110,7 +110,7 @@ const Review = () => {
     // Navigate to WordLearn with the wordbook, which will auto-sort by low mastery
     const targetWbId = wordbookId || (selectedWbId !== 'all' ? selectedWbId : undefined);
     if (targetWbId) {
-      navigate(`/wordbooks/${targetWbId}/learn`);
+      navigate(`/wordbooks/${targetWbId}/learn?mode=review`);
     } else if (wordbooks && wordbooks.length > 0) {
       // Find the wordbook with most words to review
       const wbWithMostReview = needReviewWords.reduce((acc, w) => {
@@ -120,7 +120,7 @@ const Review = () => {
       
       const topWbId = Object.entries(wbWithMostReview).sort((a, b) => b[1] - a[1])[0]?.[0];
       if (topWbId) {
-        navigate(`/wordbooks/${topWbId}/learn`);
+        navigate(`/wordbooks/${topWbId}/learn?mode=review`);
       }
     }
   };
